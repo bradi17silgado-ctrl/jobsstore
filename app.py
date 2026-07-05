@@ -89,35 +89,58 @@ def solicitar():
     if "id" not in session:
         return redirect("/login")
 
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    # Obtener lista de vendedores
+    cursor.execute("""
+        SELECT nombre
+        FROM usuarios
+        ORDER BY nombre
+    """)
+    vendedores = cursor.fetchall()
+
     if request.method == "POST":
 
         try:
-            vendedor     = request.form.get("vendedor", "").strip()
-            codigo       = request.form.get("codigo", "").strip()
-            cantidad     = request.form.get("cantidad", "").strip()
-            sede_origen  = request.form.get("sede_origen", "").strip()
+            vendedor = request.form.get("vendedor", "").strip()
+            codigo = request.form.get("codigo", "").strip()
+            cantidad = request.form.get("cantidad", "").strip()
+            sede_origen = request.form.get("sede_origen", "").strip()
             sede_destino = request.form.get("sede_destino", "").strip()
-
-            conn   = get_db()
-            cursor = conn.cursor()
 
             cursor.execute("""
                 INSERT INTO solicitudes
-                    (vendedor, codigo, cantidad, sede_origen, sede_destino, estado)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (vendedor, codigo, cantidad, sede_origen, sede_destino, "Pendiente"))
+                (vendedor, codigo, cantidad, sede_origen, sede_destino, estado)
+                VALUES (%s,%s,%s,%s,%s,%s)
+            """, (
+                vendedor,
+                codigo,
+                cantidad,
+                sede_origen,
+                sede_destino,
+                "Pendiente"
+            ))
 
             conn.commit()
+
+            flash("✅ Solicitud registrada correctamente", "success")
+
             cursor.close()
             conn.close()
 
-            flash("✅ Solicitud registrada correctamente", "success")
             return redirect("/solicitar")
 
         except Exception as e:
             return f"ERROR AL INSERTAR: {e}"
 
-    return render_template("solicitar.html")
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "solicitar.html",
+        vendedores=vendedores
+    )
 
 
 # ==========================================

@@ -28,10 +28,20 @@
 
             <form method="POST">
 
-                <div class="mb-3">
-                    <label class="form-label">Vendedor</label>
-                    <input type="text" name="vendedor" class="form-control" placeholder="" required>
-                </div>
+               <div class="mb-3">
+    <label class="form-label">Vendedor</label>
+
+    <select name="vendedor" class="form-select" required>
+        <option value="" selected disabled>Seleccione un vendedor</option>
+
+        {% for vendedor in vendedores %}
+            <option value="{{ vendedor.nombre }}">
+                {{ vendedor.nombre }}
+            </option>
+        {% endfor %}
+
+    </select>
+</div>
 
                 <div class="mb-3">
                     <label class="form-label">Código del Repuesto</label>
