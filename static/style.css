@@ -26,7 +26,7 @@ body {
 }
 
 /* =========================
-   TITULOS GENERALES
+   TÍTULOS GENERALES
 ========================= */
 
 h1,
@@ -171,6 +171,10 @@ tbody td {
     align-items: center;
 }
 
+.topbar-left {
+    min-width: 0;
+}
+
 .topbar-right {
     position: absolute;
     right: 20px;
@@ -186,6 +190,7 @@ tbody td {
 ========================= */
 
 .logo-empresa {
+    display: block;
     width: 340px;
     height: 70px;
     background: #ffffff;
@@ -275,7 +280,7 @@ tbody td {
 }
 
 /* =========================
-   BIENVENIDA SIN CUADRO
+   BIENVENIDA
 ========================= */
 
 .bienvenida {
@@ -285,7 +290,6 @@ tbody td {
     padding: 30px;
     text-align: center;
     box-sizing: border-box;
-
     background: transparent !important;
     border: none !important;
     outline: none !important;
@@ -294,8 +298,6 @@ tbody td {
     -webkit-backdrop-filter: none !important;
     border-radius: 0;
 }
-
-/* Título principal */
 
 .bienvenida h1 {
     font-size: 38px;
@@ -309,8 +311,6 @@ tbody td {
         0 2px 5px rgba(255, 255, 255, 0.9);
 }
 
-/* Subtítulo */
-
 .bienvenida .subtitulo {
     font-size: 21px;
     font-weight: 700;
@@ -321,8 +321,6 @@ tbody td {
         -1px -1px 3px #fcfbfb,
         0 2px 6px #faf4f4;
 }
-
-/* Texto descriptivo */
 
 .bienvenida p {
     font-size: 17px;
@@ -417,7 +415,7 @@ tbody td {
 }
 
 /* =========================
-   ADAPTACIÓN A TABLET Y MÓVIL
+   TABLET Y MÓVILES
 ========================= */
 
 @media (max-width: 768px) {
@@ -432,9 +430,24 @@ tbody td {
         padding: 0 10px;
     }
 
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .menu-btn {
+        margin-right: 8px;
+    }
+
     .logo-empresa {
         width: 180px;
-        margin-left: -35px;
+        height: 65px;
+        margin-left: -15px;
+        transform: translateX(-15px);
+        max-width: calc(100vw - 150px);
+        flex-shrink: 1;
     }
 
     .topbar-right {
@@ -442,10 +455,7 @@ tbody td {
         gap: 6px;
     }
 
-    .usuario-nombre {
-        font-size: 11px;
-    }
-
+    .usuario-nombre,
     .usuario-rol,
     .usuario-sede {
         font-size: 11px;
@@ -457,7 +467,6 @@ tbody td {
 
     .bienvenida {
         padding: 20px 10px;
-        background: transparent !important;
     }
 
     .bienvenida h1 {
@@ -496,8 +505,21 @@ tbody td {
 @media (max-width: 400px) {
 
     .logo-empresa {
-        width: 130px;
-        margin-left: -25px;
+        width: 145px;
+        height: 65px;
+        margin-left: -10px;
+        transform: translateX(-15px);
+        max-width: calc(100vw - 145px);
+    }
+
+    .menu-btn {
+        font-size: 32px;
+        margin-right: 5px;
+    }
+
+    .topbar-right {
+        right: 8px;
+        gap: 5px;
     }
 
     .icono {
