@@ -20,45 +20,6 @@ def get_db():
     )
 
 
-# ==========================================
-# LOGIN
-# ==========================================
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-
-    if request.method == "POST":
-
-        try:
-            usuario    = request.form["usuario"]
-            contraseña = request.form["contraseña"]
-
-            conn   = get_db()
-            cursor = conn.cursor(dictionary=True)
-
-            cursor.execute("""
-                SELECT * FROM usuarios
-                WHERE usuario = %s AND contraseña = %s
-            """, (usuario, contraseña))
-
-            user = cursor.fetchone()
-            cursor.close()
-            conn.close()
-
-            if user:
-                session.clear()
-                session["id"]     = user["id"]
-                session["nombre"] = user["nombre"]
-                session["rol"]    = user["rol"]
-                session["sede"]   = user.get("sede", "")
-                return redirect("/inicio")
-
-            return render_template("login.html", error="Usuario o contraseña incorrectos")
-
-        except Exception as e:
-            return f"ERROR LOGIN: {e}"
-
-    return render_template("login.html")
 
 
 # ==========================================
