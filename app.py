@@ -62,7 +62,7 @@ def login():
 
 
 # ==========================================
-# INICIO — Lista todas las solicitudes
+# INICIO — Lista todas las solicitudes hola
 # ==========================================
 
 @app.route("/")
@@ -239,6 +239,10 @@ def logout():
     session.clear()
     return redirect("/login")
 
+
+@app.route('/catalogo')
+def catalogo():
+    return render_template('catalogo.html')
 
 # ==========================================
 # ARRANQUE
