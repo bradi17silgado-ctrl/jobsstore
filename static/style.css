@@ -433,18 +433,17 @@ tbody td {
     }
 
     /* Fondo blanco desde el borde izquierdo */
-    .topbar-left {
-        display: flex;
-        align-items: center;
-        position: relative;
-        height: 70px;
-        flex: 1;
-        min-width: 0;
-        background: #ffffff;
-        border-radius: 0 55px 55px 0;
-        box-sizing: border-box;
-        padding-right: 150px;
-    }
+   .topbar-left {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    height: 65px;
+    background: #ffffff;
+    border-radius: 40px;
+    padding: 0 8px;
+    box-sizing: border-box;
+}
 
     /* Menú dentro del fondo blanco */
     .menu-btn {
