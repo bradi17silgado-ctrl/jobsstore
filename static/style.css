@@ -303,7 +303,7 @@ tbody td {
 .bienvenida h1 {
     font-size: 38px;
     font-weight: bold;
-    color: #1f4f77;
+    color: #000000;
     margin-top: 15px;
     margin-bottom: 15px;
 }
@@ -317,7 +317,7 @@ tbody td {
 .bienvenida .subtitulo {
     font-size: 21px;
     font-weight: 600;
-    color: #0097d9;
+    color: #000000;
 }
 
 /* =========================
