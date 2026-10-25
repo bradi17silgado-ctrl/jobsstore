@@ -1,9 +1,9 @@
 
 body {
     background-image: url('/static/obscool1.png');
-    background-size: 1150px auto;
+    background-size: contain;
     background-repeat: no-repeat;
-    background-position: center 70px;
+    background-position: center center;
     background-attachment: fixed;
     background-color: #ffffff;
     min-height: 100vh;
