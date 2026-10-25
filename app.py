@@ -243,10 +243,7 @@ def catalogo():
 # CERRAR SESIÓN
 # ==========================================
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/inicio")
+
 
 
 # ==========================================
