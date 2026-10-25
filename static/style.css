@@ -300,7 +300,7 @@ tbody td {
 .bienvenida h1 {
     font-size: 38px;
     font-weight: 800;
-    color: #1F4F77;
+    color: #000000;
     margin-top: 15px;
     margin-bottom: 20px;
     text-shadow:
@@ -314,12 +314,12 @@ tbody td {
 .bienvenida .subtitulo {
     font-size: 21px;
     font-weight: 700;
-    color: #FFFFFF;
+    color: #000000;
     line-height: 1.6;
     text-shadow:
-        1px 1px 3px #1F4F77,
-        -1px -1px 3px #1F4F77,
-        0 2px 6px #1F4F77;
+        1px 1px 3px #000000,
+        -1px -1px 3px #000000,
+        0 2px 6px #000000;
 }
 
 /* Texto descriptivo */
@@ -327,12 +327,12 @@ tbody td {
 .bienvenida p {
     font-size: 17px;
     font-weight: 600;
-    color: #FFFFFF;
+    color: #000000;
     line-height: 1.8;
     text-shadow:
-        1px 1px 4px #1F4F77,
-        -1px -1px 4px #1F4F77,
-        0 2px 6px #1F4F77;
+        1px 1px 4px #000000,
+        -1px -1px 4px #000000,
+        0 2px 6px #000000;
 }
 
 /* =========================
