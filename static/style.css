@@ -5,7 +5,7 @@
 
 body {
     background-image: url('/static/obscool1.png');
-    background-size: 1390px auto;
+    background-size: cover;
     background-repeat: no-repeat;
     background-position: center 70px;
     background-attachment: fixed;
@@ -26,7 +26,7 @@ body {
 }
 
 /* =========================
-   TITULOS
+   TITULOS GENERALES
 ========================= */
 
 h1,
@@ -38,12 +38,12 @@ h3 {
 }
 
 h2 {
-    height: 60px;
+    min-height: 60px;
     background-image: linear-gradient(90deg, #0097D9, #0070B4);
 }
 
 h3 {
-    height: 60px;
+    min-height: 60px;
     padding: 3px 5px;
 }
 
@@ -54,23 +54,22 @@ h3 {
 form,
 tr {
     width: 100%;
-    height: 60px;
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
 .form-control {
-    background: transparent !important;
+    background: rgba(255, 255, 255, 0.25) !important;
     color: #000000 !important;
-    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(31, 79, 119, 0.45) !important;
 }
 
 .form-select,
 select {
     width: 100%;
-    height: 40px;
-    background: transparent !important;
+    min-height: 40px;
+    background: rgba(255, 255, 255, 0.7) !important;
     color: #000000 !important;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(31, 79, 119, 0.45) !important;
 }
 
 .form-select option,
@@ -81,8 +80,8 @@ select option {
 
 label.form-label {
     font-weight: 600;
-    color: #1a1a1a;
-    text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+    color: #1F4F77;
+    text-shadow: 0 1px 3px #ffffff;
 }
 
 /* =========================
@@ -137,7 +136,7 @@ table {
 
 thead th {
     background: #ffffff;
-    color: #000000;
+    color: #1F4F77;
     text-align: center;
     font-size: 18px;
 }
@@ -157,7 +156,7 @@ tbody td {
     left: 0;
     width: 100%;
     height: 70px;
-    background: #1f4f77;
+    background: #1F4F77;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -228,7 +227,7 @@ tbody td {
     left: 0;
     width: 280px;
     height: calc(100vh - 70px);
-    background: #1f4f77;
+    background: #1F4F77;
     transition: transform 0.3s ease;
     z-index: 998;
     overflow-y: auto;
@@ -253,7 +252,7 @@ tbody td {
 }
 
 .sidebar a:hover {
-    background: #2563eb;
+    background: #0097D9;
 }
 
 /* =========================
@@ -281,39 +280,59 @@ tbody td {
 
 .bienvenida {
     width: 100%;
-    max-width: 750px;
+    max-width: 850px;
     margin: 0 auto;
     padding: 30px;
     text-align: center;
     box-sizing: border-box;
 
-    /* Eliminar fondo, borde, sombra y efecto de vidrio */
     background: transparent !important;
     border: none !important;
+    outline: none !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-radius: 0;
 }
 
+/* Título principal */
+
 .bienvenida h1 {
     font-size: 38px;
-    font-weight: bold;
-    color: #000000;
+    font-weight: 800;
+    color: #1F4F77;
     margin-top: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    text-shadow:
+        1px 1px 0 #ffffff,
+        -1px -1px 0 #ffffff,
+        0 2px 5px rgba(255, 255, 255, 0.9);
 }
 
-.bienvenida p {
-    font-size: 17px;
-    color: #000000;
-    line-height: 1.7;
-}
+/* Subtítulo */
 
 .bienvenida .subtitulo {
     font-size: 21px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.6;
+    text-shadow:
+        1px 1px 3px #1F4F77,
+        -1px -1px 3px #1F4F77,
+        0 2px 6px #1F4F77;
+}
+
+/* Texto descriptivo */
+
+.bienvenida p {
+    font-size: 17px;
     font-weight: 600;
-    color: #000000;
+    color: #FFFFFF;
+    line-height: 1.8;
+    text-shadow:
+        1px 1px 4px #1F4F77,
+        -1px -1px 4px #1F4F77,
+        0 2px 6px #1F4F77;
 }
 
 /* =========================
@@ -332,26 +351,27 @@ tbody td {
 .btn-inicio {
     display: inline-block;
     padding: 12px 20px;
-    background: #1f4f77;
+    background: #1F4F77;
     color: #ffffff;
     text-decoration: none;
     border: none;
     border-radius: 8px;
     font-weight: bold;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .btn-inicio:hover {
-    background: #0097d9;
+    background: #0097D9;
     color: #ffffff;
+    transform: translateY(-2px);
 }
 
 .btn-secundario {
-    background: #0097d9;
+    background: #0097D9;
 }
 
 .btn-secundario:hover {
-    background: #0070b4;
+    background: #0070B4;
 }
 
 /* =========================
@@ -403,7 +423,7 @@ tbody td {
 @media (max-width: 768px) {
 
     body {
-        background-size: 100% auto;
+        background-size: auto 100vh;
         background-position: center 70px;
         background-attachment: scroll;
     }
