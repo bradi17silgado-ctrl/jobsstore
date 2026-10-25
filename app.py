@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, session, flash
 import mysql.connector
 import os
@@ -20,10 +21,8 @@ def get_db():
     )
 
 
-
-
 # ==========================================
-# INICIO — Lista todas las solicitudes hola
+# INICIO
 # ==========================================
 
 @app.route("/")
@@ -33,10 +32,6 @@ def home():
 
 @app.route("/inicio")
 def inicio():
-
-    if "id" not in session:
-        return redirect("/login")
-
     return render_template("index.html")
 
 
@@ -47,33 +42,46 @@ def inicio():
 @app.route("/solicitar", methods=["GET", "POST"])
 def solicitar():
 
-    if "id" not in session:
-        return redirect("/login")
+    conn = None
+    cursor = None
 
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
 
-    # Obtener lista de vendedores
-    cursor.execute("""
-        SELECT nombre
-        FROM usuarios
-        ORDER BY nombre
-    """)
-    vendedores = cursor.fetchall()
+        cursor.execute("""
+            SELECT nombre
+            FROM usuarios
+            ORDER BY nombre
+        """)
 
-    if request.method == "POST":
+        vendedores = cursor.fetchall()
 
-        try:
+        if request.method == "POST":
+
             vendedor = request.form.get("vendedor", "").strip()
             codigo = request.form.get("codigo", "").strip()
             cantidad = request.form.get("cantidad", "").strip()
             sede_origen = request.form.get("sede_origen", "").strip()
             sede_destino = request.form.get("sede_destino", "").strip()
 
+            if not all([
+                vendedor,
+                codigo,
+                cantidad,
+                sede_origen,
+                sede_destino
+            ]):
+                flash("Por favor, completa todos los campos.", "warning")
+                return render_template(
+                    "solicitar.html",
+                    vendedores=vendedores
+                )
+
             cursor.execute("""
                 INSERT INTO solicitudes
                 (vendedor, codigo, cantidad, sede_origen, sede_destino, estado)
-                VALUES (%s,%s,%s,%s,%s,%s)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 vendedor,
                 codigo,
@@ -85,23 +93,23 @@ def solicitar():
 
             conn.commit()
 
-            flash("✅ Solicitud registrada correctamente", "success")
-
-            cursor.close()
-            conn.close()
-
+            flash("Solicitud registrada correctamente.", "success")
             return redirect("/solicitar")
 
-        except Exception as e:
-            return f"ERROR AL INSERTAR: {e}"
+        return render_template(
+            "solicitar.html",
+            vendedores=vendedores
+        )
 
-    cursor.close()
-    conn.close()
+    except Exception as e:
+        app.logger.exception("Error en solicitar")
+        return f"Error al procesar la solicitud: {e}", 500
 
-    return render_template(
-        "solicitar.html",
-        vendedores=vendedores
-    )
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
 
 
 # ==========================================
@@ -111,56 +119,77 @@ def solicitar():
 @app.route("/estado/<int:id>/<nuevo_estado>")
 def cambiar_estado(id, nuevo_estado):
 
-    if "id" not in session:
-        return redirect("/login")
+    estados_validos = [
+        "Pendiente",
+        "En Busqueda",
+        "Listo",
+        "No Disponible"
+    ]
 
-    # Evitar estados inválidos
-    estados_validos = ["Pendiente", "En Busqueda", "Listo", "No Disponible"]
     if nuevo_estado not in estados_validos:
         return "Estado no válido", 400
 
+    conn = None
+    cursor = None
+
     try:
-        conn   = get_db()
+        conn = get_db()
         cursor = conn.cursor()
 
         cursor.execute("""
-            UPDATE solicitudes SET estado = %s WHERE id = %s
+            UPDATE solicitudes
+            SET estado = %s
+            WHERE id = %s
         """, (nuevo_estado, id))
 
         conn.commit()
-        cursor.close()
-        conn.close()
 
         return redirect("/pendientes")
 
     except Exception as e:
-        return f"ERROR AL CAMBIAR ESTADO: {e}"
+        app.logger.exception("Error al cambiar estado")
+        return f"Error al cambiar estado: {e}", 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
 
 
 # ==========================================
 # ELIMINAR SOLICITUD
 # ==========================================
 
-@app.route("/estado/<int:id>/Borrar")
+@app.route("/estado/<int:id>/Borrar", methods=["POST"])
 def borrar(id):
 
-    if "id" not in session:
-        return redirect("/login")
+    conn = None
+    cursor = None
 
     try:
-        conn   = get_db()
+        conn = get_db()
         cursor = conn.cursor()
 
-        cursor.execute("DELETE FROM solicitudes WHERE id = %s", (id,))
+        cursor.execute(
+            "DELETE FROM solicitudes WHERE id = %s",
+            (id,)
+        )
 
         conn.commit()
-        cursor.close()
-        conn.close()
 
+        flash("Solicitud eliminada correctamente.", "success")
         return redirect("/pendientes")
 
     except Exception as e:
-        return f"ERROR AL BORRAR: {e}"
+        app.logger.exception("Error al borrar solicitud")
+        return f"Error al borrar la solicitud: {e}", 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
 
 
 # ==========================================
@@ -170,25 +199,44 @@ def borrar(id):
 @app.route("/pendientes")
 def pendientes():
 
-    if "id" not in session:
-        return redirect("/login")
+    conn = None
+    cursor = None
 
     try:
-        conn   = get_db()
+        conn = get_db()
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute("""
-            SELECT * FROM solicitudes ORDER BY id DESC
+            SELECT *
+            FROM solicitudes
+            ORDER BY id DESC
         """)
 
         solicitudes = cursor.fetchall()
-        cursor.close()
-        conn.close()
 
-        return render_template("pendientes.html", solicitudes=solicitudes)
+        return render_template(
+            "pendientes.html",
+            solicitudes=solicitudes
+        )
 
     except Exception as e:
-        return f"ERROR PENDIENTES: {e}"
+        app.logger.exception("Error al consultar pendientes")
+        return f"Error al consultar pendientes: {e}", 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+# ==========================================
+# CATÁLOGO
+# ==========================================
+
+@app.route("/catalogo")
+def catalogo():
+    return render_template("catalogo.html")
 
 
 # ==========================================
@@ -198,12 +246,8 @@ def pendientes():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/login")
+    return redirect("/inicio")
 
-
-@app.route('/catalogo')
-def catalogo():
-    return render_template('catalogo.html')
 
 # ==========================================
 # ARRANQUE
@@ -211,4 +255,8 @@ def catalogo():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
