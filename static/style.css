@@ -304,3 +304,87 @@ tbody td{
 .btn-volver{
     margin-left: 90px;
 }
+
+
+/* =========================
+   BIENVENIDA PRINCIPAL
+========================= */
+
+.main-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 100px 25px 40px;
+    box-sizing: border-box;
+}
+
+.bienvenida {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 30px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.bienvenida h1 {
+    font-size: 38px;
+    font-weight: bold;
+    color: #1f4f77;
+    margin-bottom: 15px;
+}
+
+.bienvenida p {
+    font-size: 17px;
+    color: #333;
+    line-height: 1.7;
+}
+
+.bienvenida .subtitulo {
+    font-size: 21px;
+    font-weight: 600;
+    color: #0097d9;
+}
+
+.inicio-acciones {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.btn-inicio {
+    display: inline-block;
+    padding: 12px 20px;
+    background: #1f4f77;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-inicio:hover {
+    background: #0097d9;
+    color: white;
+}
+
+.btn-secundario {
+    background: #0097d9;
+}
+
+@media (max-width: 600px) {
+    .main-content {
+        padding: 90px 15px 25px;
+    }
+
+    .bienvenida {
+        padding: 20px;
+    }
+
+    .bienvenida h1 {
+        font-size: 28px;
+    }
+}
