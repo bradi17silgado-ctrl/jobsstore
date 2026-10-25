@@ -190,16 +190,19 @@ tbody td {
    LOGO DE LA EMPRESA
 ========================= */
 
+
 .logo-empresa {
     display: block;
-    width: 340px;
+    width: 70px;
     height: 70px;
     background: #ffffff;
-    border-radius: 55px;
+    border-radius: 50%;
     object-fit: contain;
-    margin-left: -115px;
+    margin-left: -20px;
     flex-shrink: 0;
+    overflow: hidden;
 }
+
 
 .logo-sager {
     color: #ffffff;
