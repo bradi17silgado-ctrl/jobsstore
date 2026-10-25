@@ -1,14 +1,15 @@
 
 body {
     background-image: url('/static/obscool1.png');
-    background-size: contain;
+    background-size: 1300px auto;
     background-repeat: no-repeat;
-    background-position: center center;
+    background-position: center 70px;
     background-attachment: fixed;
     background-color: #ffffff;
     min-height: 100vh;
     margin: 0;
 }
+
 
 
 /* =========================
