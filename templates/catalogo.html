@@ -374,15 +374,21 @@
     buscador.addEventListener("input", filtrarProductos);
     filtro.addEventListener("change", filtrarProductos);
 
-    function consultar(nombre) {
-        const mensaje = "Hola, quiero consultar disponibilidad y precio de: "
-                      + nombre;
+   
+function consultar(nombre) {
+    const numeroWhatsApp = "573227879835"; // Reemplaza por tu número
 
-        window.open(
-            "https://wa.me/?text=" + encodeURIComponent(mensaje),
-            "_blank"
-        );
-    }
+    const mensaje =
+        "¡Hola! Estoy interesado en un producto de SAGER REPUESTOS.\n\n" +
+        "Producto: " + nombre + "\n" +
+        "Quiero conocer su disponibilidad y precio. ¡Gracias!";
+
+    const url = "https://wa.me/" + numeroWhatsApp +
+                "?text=" + encodeURIComponent(mensaje);
+
+    window.open(url, "_blank");
+}
+
 </script>
 
 </body>
