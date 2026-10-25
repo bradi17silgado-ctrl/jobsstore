@@ -183,6 +183,7 @@ tbody td {
     display: flex;
     align-items: center;
     gap: 10px;
+    z-index: 3;
 }
 
 /* =========================
@@ -219,7 +220,7 @@ tbody td {
     margin-right: 12px;
     flex-shrink: 0;
     position: relative;
-    z-index: 1000;
+    z-index: 4;
 }
 
 /* =========================
@@ -427,32 +428,60 @@ tbody td {
     }
 
     .topbar {
-        padding: 0 10px;
+        padding: 0;
+        overflow: visible;
     }
 
+    /* Fondo blanco desde el borde izquierdo */
     .topbar-left {
         display: flex;
         align-items: center;
+        position: relative;
+        height: 70px;
         flex: 1;
         min-width: 0;
+        background: #ffffff;
+        border-radius: 0 55px 55px 0;
+        box-sizing: border-box;
+        padding-right: 150px;
     }
 
+    /* Menú dentro del fondo blanco */
     .menu-btn {
-        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 70px;
+        margin: 0;
+        padding: 0;
+        flex-shrink: 0;
+        background: transparent;
+        color: #000000;
+        font-size: 32px;
+        position: relative;
+        z-index: 4;
     }
 
+    /* Logo alineado a continuación del menú */
     .logo-empresa {
         width: 180px;
         height: 65px;
-        margin-left: -15px;
-        transform: translateX(-15px);
-        max-width: calc(100vw - 150px);
+        margin: 0;
+        transform: none;
+        object-fit: contain;
         flex-shrink: 1;
+        max-width: 100%;
+        background: #ffffff;
+        position: relative;
+        z-index: 2;
     }
 
+    /* Iconos conservan el fondo azul */
     .topbar-right {
         right: 10px;
         gap: 6px;
+        z-index: 5;
     }
 
     .usuario-nombre,
@@ -504,17 +533,20 @@ tbody td {
 
 @media (max-width: 400px) {
 
-    .logo-empresa {
-        width: 145px;
-        height: 65px;
-        margin-left: -10px;
-        transform: translateX(-15px);
-        max-width: calc(100vw - 145px);
+    .topbar-left {
+        padding-right: 125px;
+        border-radius: 0 45px 45px 0;
     }
 
     .menu-btn {
-        font-size: 32px;
-        margin-right: 5px;
+        width: 43px;
+        font-size: 30px;
+    }
+
+    .logo-empresa {
+        width: 145px;
+        max-width: 100%;
+        height: 65px;
     }
 
     .topbar-right {
