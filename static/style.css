@@ -34,7 +34,7 @@ h2,
 h3 {
     width: 100%;
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-    color: black;
+    color: #000000;
 }
 
 h2 {
@@ -60,7 +60,7 @@ tr {
 
 .form-control {
     background: transparent !important;
-    color: #000 !important;
+    color: #000000 !important;
     border: 1px solid rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -69,14 +69,14 @@ select {
     width: 100%;
     height: 40px;
     background: transparent !important;
-    color: #000 !important;
+    color: #000000 !important;
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .form-select option,
 select option {
-    background: #fff;
-    color: #000;
+    background: #ffffff;
+    color: #000000;
 }
 
 label.form-label {
@@ -96,7 +96,7 @@ label.form-label {
 
 .btn-regresar {
     background: linear-gradient(135deg, #3b82f6, #1e40af);
-    color: white;
+    color: #ffffff;
     padding: 9px 15px;
     border: none;
     border-radius: 30px;
@@ -136,8 +136,8 @@ table {
 }
 
 thead th {
-    background: #fff;
-    color: #000;
+    background: #ffffff;
+    color: #000000;
     text-align: center;
     font-size: 18px;
 }
@@ -189,14 +189,15 @@ tbody td {
 .logo-empresa {
     width: 340px;
     height: 70px;
-    background: #fff;
+    background: #ffffff;
     border-radius: 55px;
     object-fit: contain;
     margin-left: -110px;
+    flex-shrink: 0;
 }
 
 .logo-sager {
-    color: #fff;
+    color: #ffffff;
     font-size: 25px;
     font-weight: bold;
 }
@@ -208,7 +209,7 @@ tbody td {
 .menu-btn {
     background: transparent;
     border: none;
-    color: #000;
+    color: #000000;
     font-size: 34px;
     cursor: pointer;
     margin-right: 12px;
@@ -231,6 +232,7 @@ tbody td {
     transition: transform 0.3s ease;
     z-index: 998;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .sidebar.oculto {
@@ -238,13 +240,13 @@ tbody td {
 }
 
 .sidebar h3 {
-    color: white;
+    color: #ffffff;
     text-align: center;
 }
 
 .sidebar a {
     display: block;
-    color: white;
+    color: #ffffff;
     text-decoration: none;
     padding: 15px 20px;
     font-size: 18px;
@@ -267,37 +269,31 @@ tbody td {
 }
 
 .main-content h2 {
-    background: #fff;
+    background: #ffffff;
     padding: 15px;
     margin-bottom: 10px;
     text-align: center;
 }
 
 /* =========================
-   CUADRO DE BIENVENIDA
-   TRANSPARENTE
+   BIENVENIDA SIN CUADRO
 ========================= */
 
 .bienvenida {
+    width: 100%;
     max-width: 750px;
     margin: 0 auto;
     padding: 30px;
     text-align: center;
-
-    /* Fondo blanco transparente */
-    background: rgba(255, 255, 255, 0.20);
-
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 18px;
-
-    /* Sombra suave */
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-
-    /* Efecto de vidrio */
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-
     box-sizing: border-box;
+
+    /* Eliminar fondo, borde, sombra y efecto de vidrio */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 0;
 }
 
 .bienvenida h1 {
@@ -327,6 +323,7 @@ tbody td {
 .inicio-acciones {
     display: flex;
     justify-content: center;
+    align-items: center;
     flex-wrap: wrap;
     gap: 12px;
     margin-top: 25px;
@@ -336,8 +333,9 @@ tbody td {
     display: inline-block;
     padding: 12px 20px;
     background: #1f4f77;
-    color: white;
+    color: #ffffff;
     text-decoration: none;
+    border: none;
     border-radius: 8px;
     font-weight: bold;
     transition: background 0.2s ease;
@@ -345,11 +343,15 @@ tbody td {
 
 .btn-inicio:hover {
     background: #0097d9;
-    color: white;
+    color: #ffffff;
 }
 
 .btn-secundario {
     background: #0097d9;
+}
+
+.btn-secundario:hover {
+    background: #0070b4;
 }
 
 /* =========================
@@ -359,7 +361,7 @@ tbody td {
 .usuario-info {
     display: flex;
     flex-direction: column;
-    color: white;
+    color: #ffffff;
     text-align: left;
 }
 
@@ -395,10 +397,11 @@ tbody td {
 }
 
 /* =========================
-   ADAPTACIÓN A MÓVILES
+   ADAPTACIÓN A TABLET Y MÓVIL
 ========================= */
 
 @media (max-width: 768px) {
+
     body {
         background-size: 100% auto;
         background-position: center 70px;
@@ -433,8 +436,8 @@ tbody td {
     }
 
     .bienvenida {
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.20);
+        padding: 20px 10px;
+        background: transparent !important;
     }
 
     .bienvenida h1 {
@@ -449,6 +452,14 @@ tbody td {
         font-size: 15px;
     }
 
+    .inicio-acciones {
+        gap: 10px;
+    }
+
+    .btn-inicio {
+        padding: 11px 15px;
+    }
+
     .btn-nueva {
         margin-right: 0;
     }
@@ -458,7 +469,12 @@ tbody td {
     }
 }
 
+/* =========================
+   MÓVILES PEQUEÑOS
+========================= */
+
 @media (max-width: 400px) {
+
     .logo-empresa {
         width: 130px;
         margin-left: -25px;
@@ -474,5 +490,15 @@ tbody td {
 
     .bienvenida h1 {
         font-size: 24px;
+    }
+
+    .bienvenida .subtitulo {
+        font-size: 16px;
+    }
+
+    .btn-inicio {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
     }
 }
