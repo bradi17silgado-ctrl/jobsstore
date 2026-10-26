@@ -245,6 +245,54 @@ def catalogo():
 
 
 
+# ==========================================
+# COMPRAS DE LOS USUARIOS
+# ==========================================
+
+@app.route("/compras")
+def compras():
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT
+                id,
+                usuario,
+                producto,
+                codigo,
+                cantidad,
+                precio_unitario,
+                cantidad * precio_unitario AS valor_total,
+                fecha_compra AS fecha,
+                estado
+            FROM compras
+            ORDER BY fecha_compra DESC
+        """)
+
+        lista_compras = cursor.fetchall()
+
+        return render_template(
+            "compras.html",
+            compras=lista_compras
+        )
+
+    except Exception:
+        app.logger.exception("Error al consultar compras")
+        return "Error al consultar las compras.", 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+
+
 
 # ==========================================
 # ARRANQUE
