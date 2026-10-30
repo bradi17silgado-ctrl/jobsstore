@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OBSCOOL | Gorras y relojes con estilo{% endblock %}</title>
+    <meta name="description" content="{% block desc %}OBSCOOL: gorras y relojes con estilo. Elige tus productos y haz tu pedido o consulta directo por WhatsApp.{% endblock %}">
+    <meta name="theme-color" content="#0b2a6b">
+    <meta property="og:title" content="OBSCOOL | Gorras y relojes con estilo">
+    <meta property="og:description" content="Elige tus productos y haz tu pedido directo por WhatsApp.">
+    <meta property="og:image" content="{{ url_for('static', filename='obscool.png', _external=True) }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.23 8.23Zm4.52-6.16c-.25-.12-1.47-.73-1.7-.82-.23-.08-.39-.12-.56.13-.17.25-.64.82-.78.98-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.16-.48-.29Z"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M6 7h12l1 13H5L6 7Zm3 0a3 3 0 0 1 6 0"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<header class="topbar">
+    <div class="wrap topbar-in">
+        <a href="{{ url_for('inicio') }}" class="brand" aria-label="OBSCOOL, ir al inicio">
+            <img src="{{ url_for('static', filename='img/logo-emblema.png') }}" alt="" width="44" height="39">
+            <span class="brand-txt"><b>OBS</b><i>COOL</i></span>
+        </a>
+
+        <nav class="nav" id="nav" aria-label="Principal">
+            <a href="{{ url_for('inicio') }}" {% if request.endpoint == 'inicio' %}aria-current="page"{% endif %}>Inicio</a>
+            <a href="{{ url_for('catalogo') }}" {% if request.endpoint == 'catalogo' %}aria-current="page"{% endif %}>Catálogo</a>
+            <a href="{{ url_for('catalogo') }}?c=gorra">Gorras</a>
+            <a href="{{ url_for('catalogo') }}?c=reloj">Relojes</a>
+        </nav>
+
+        <div class="topbar-actions">
+            <button type="button" class="cart-btn" id="abrirCarrito" aria-label="Abrir mi pedido">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><use href="#i-bag"/></svg>
+                <span class="cart-count" id="contadorCarrito" hidden>0</span>
+            </button>
+            <button type="button" class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav">
+                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><use href="#i-menu"/></svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main id="contenido">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="wrap footer-in">
+        <div>
+            <div class="brand brand-foot">
+                <img src="{{ url_for('static', filename='img/logo-emblema.png') }}" alt="" width="40" height="36">
+                <span class="brand-txt"><b>OBS</b><i>COOL</i></span>
+            </div>
+            <p class="foot-lema">{{ negocio.lema }}</p>
+        </div>
+        <div>
+            <h4>Tienda</h4>
+            <a href="{{ url_for('catalogo') }}">Catálogo completo</a>
+            <a href="{{ url_for('catalogo') }}?c=gorra">Gorras</a>
+            <a href="{{ url_for('catalogo') }}?c=reloj">Relojes</a>
+        </div>
+        <div>
+            <h4>Atención</h4>
+            <a href="https://wa.me/{{ negocio.whatsapp }}" target="_blank" rel="noopener">WhatsApp directo</a>
+            <p class="foot-small">Pedidos y consultas por WhatsApp.<br>Te confirmamos disponibilidad y envío.</p>
+        </div>
+    </div>
+    <div class="foot-bar"><div class="wrap">© <span id="anio">2026</span> OBSCOOL. Todos los derechos reservados.</div></div>
+</footer>
+
+<!-- Carrito -->
+<div class="overlay" id="overlay" hidden></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Mi pedido">
+    <div class="drawer-head">
+        <h2>Mi pedido</h2>
+        <button type="button" class="icon-btn" id="cerrarCarrito" aria-label="Cerrar"><svg viewBox="0 0 24 24" width="22" height="22"><use href="#i-x"/></svg></button>
+    </div>
+
+    <div class="drawer-body" id="listaCarrito"></div>
+
+    <div class="drawer-foot" id="pieCarrito">
+        <label class="field">
+            <span>Tu nombre <em>(opcional)</em></span>
+            <input type="text" id="nombreCliente" placeholder="¿Cómo te llamas?" autocomplete="name" maxlength="60">
+        </label>
+        <label class="field">
+            <span>Ciudad / dirección de envío <em>(opcional)</em></span>
+            <input type="text" id="ciudadCliente" placeholder="Ej: Medellín" autocomplete="address-level2" maxlength="80">
+        </label>
+        <div class="total-row"><span>Total estimado</span><strong id="totalCarrito">$0</strong></div>
+        <button type="button" class="btn btn-wa btn-block" id="enviarPedido">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><use href="#i-wa"/></svg>
+            Finalizar pedido por WhatsApp
+        </button>
+        <button type="button" class="link-btn" id="vaciarCarrito">Vaciar pedido</button>
+        <p class="drawer-note">Se abrirá WhatsApp con tu pedido listo. El pago y el envío los coordinas directamente con nosotros.</p>
+    </div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<a class="fab-wa" id="fabWa" href="https://wa.me/{{ negocio.whatsapp }}?text={{ '¡Hola OBSCOOL! Quisiera más información.'|urlencode }}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><use href="#i-wa"/></svg>
+</a>
+
+<script>
+    window.OBS = {
+        whatsapp: "{{ negocio.whatsapp }}",
+        productos: {{ todos_productos|tojson }}
+    };
+</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
