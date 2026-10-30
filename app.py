@@ -1,6 +1,11 @@
-from flask import Flask, render_template, request, redirect, abort
+from flask import Flask, render_template, request, redirect, abort, jsonify
+from urllib.parse import urlencode
+import hashlib
+import secrets
+import time
 import mysql.connector
 import os
+import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "sager-secret-2025")
@@ -72,7 +77,7 @@ def formato_cop(valor):
 
 @app.context_processor
 def inyectar_globales():
-    return {"negocio": NEGOCIO, "todos_productos": PRODUCTOS}
+    return {"negocio": NEGOCIO, "todos_productos": PRODUCTOS, "pse_activo": pse_configurado()}
 
 
 # ==========================================
@@ -107,6 +112,168 @@ def inicio():
 @app.route("/catalogo")
 def catalogo():
     return render_template("catalogo.html", productos=PRODUCTOS)
+
+
+# ==========================================
+# PAGO CON PSE (Wompi)
+# Variables de entorno necesarias (las entrega Wompi en su panel):
+#   WOMPI_PUBLIC_KEY        llave pública   (pub_test_... / pub_prod_...)
+#   WOMPI_INTEGRITY_SECRET  secreto de integridad (firma del checkout)
+#   WOMPI_EVENTS_SECRET     secreto de eventos (valida el webhook)
+#   WOMPI_ENV               "sandbox" (por defecto) o "production"
+# Sin WOMPI_PUBLIC_KEY y WOMPI_INTEGRITY_SECRET el botón PSE no se muestra.
+# En el panel de Wompi, configura la URL de eventos:  https://TU-DOMINIO/pago/webhook
+# El cliente elige PSE en el checkout de Wompi (debe estar habilitado en tu comercio).
+# ==========================================
+
+WOMPI_CHECKOUT = "https://checkout.wompi.co/p/"
+ESTADOS_PAGO = {
+    "APPROVED": "PAGADO",
+    "DECLINED": "RECHAZADO",
+    "VOIDED": "ANULADO",
+    "ERROR": "ERROR",
+    "PENDING": "PENDIENTE",
+}
+
+
+def pse_configurado():
+    return bool(os.environ.get("WOMPI_PUBLIC_KEY") and os.environ.get("WOMPI_INTEGRITY_SECRET"))
+
+
+def wompi_api():
+    if os.environ.get("WOMPI_ENV", "sandbox").lower() == "production":
+        return "https://production.wompi.co/v1"
+    return "https://sandbox.wompi.co/v1"
+
+
+def sha256(texto):
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
+
+@app.route("/pago/pse", methods=["POST"])
+def pago_pse():
+    """Recibe el carrito, recalcula el total con los precios del servidor,
+    registra la compra como PENDIENTE y devuelve la URL de pago de Wompi."""
+    if not pse_configurado():
+        return jsonify(error="El pago con PSE no está disponible por ahora."), 503
+
+    datos = request.get_json(silent=True) or {}
+    items = datos.get("items") or {}
+    nombre = str(datos.get("nombre") or "").strip()[:60] or "Cliente web"
+    ciudad = str(datos.get("ciudad") or "").strip()[:80]
+
+    catalogo = {p["id"]: p for p in PRODUCTOS}
+    lineas = []
+    for pid, cant in items.items():
+        try:
+            cant = int(cant)
+        except (TypeError, ValueError):
+            continue
+        if pid in catalogo and 0 < cant <= 99:
+            lineas.append((catalogo[pid], cant))
+    if not lineas:
+        return jsonify(error="Tu pedido está vacío."), 400
+
+    total = sum(p["precio"] * c for p, c in lineas)
+    referencia = "OBS-%d-%s" % (int(time.time()), secrets.token_hex(3).upper())
+
+    conn = cursor = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        # La referencia va en "usuario" para poder cruzar el pago con la compra.
+        usuario = "%s | %s" % (nombre, referencia)
+        for p, c in lineas:
+            cursor.execute(
+                "INSERT INTO compras (usuario, producto, codigo, cantidad, precio_unitario, estado) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
+                (usuario, p["nombre"], p["id"], c, p["precio"], "PENDIENTE"),
+            )
+        conn.commit()
+    except Exception:
+        app.logger.exception("No se pudo registrar la compra")
+        return jsonify(error="No pudimos registrar tu pedido. Intenta de nuevo."), 500
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+    centavos = int(total) * 100
+    params = {
+        "public-key": os.environ["WOMPI_PUBLIC_KEY"],
+        "currency": "COP",
+        "amount-in-cents": centavos,
+        "reference": referencia,
+        "signature:integrity": sha256(
+            "%s%d%s%s" % (referencia, centavos, "COP", os.environ["WOMPI_INTEGRITY_SECRET"])
+        ),
+        "redirect-url": request.url_root.rstrip("/") + "/pago/respuesta",
+        "customer-data:full-name": nombre,
+    }
+    if ciudad:
+        params["shipping-address:city"] = ciudad
+    return jsonify(url=WOMPI_CHECKOUT + "?" + urlencode(params), referencia=referencia)
+
+
+def actualizar_estado(referencia, estado):
+    conn = cursor = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE compras SET estado = %s WHERE usuario LIKE %s",
+                       (estado, "%| " + referencia))
+        conn.commit()
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+@app.route("/pago/webhook", methods=["POST"])
+def pago_webhook():
+    """Wompi avisa aquí el resultado final de cada transacción."""
+    secreto = os.environ.get("WOMPI_EVENTS_SECRET")
+    evento = request.get_json(silent=True) or {}
+    if not secreto or evento.get("event") != "transaction.updated":
+        return "", 200 if secreto else 503
+
+    firma = evento.get("signature") or {}
+    valores = ""
+    for ruta in firma.get("properties", []):
+        nodo = evento.get("data", {})
+        for clave in ruta.split("."):
+            nodo = nodo.get(clave, "") if isinstance(nodo, dict) else ""
+        valores += str(nodo)
+    esperado = sha256(valores + str(evento.get("timestamp", "")) + secreto)
+    if not secrets.compare_digest(esperado, str(firma.get("checksum", ""))):
+        abort(400)
+
+    tx = evento["data"]["transaction"]
+    estado = ESTADOS_PAGO.get(tx.get("status"), "PENDIENTE")
+    try:
+        actualizar_estado(tx["reference"], estado)
+    except Exception:
+        app.logger.exception("No se pudo actualizar la compra %s", tx.get("reference"))
+        return "", 500
+    return "", 200
+
+
+@app.route("/pago/respuesta")
+def pago_respuesta():
+    """Página a la que Wompi devuelve al cliente después de PSE (?id=<transacción>)."""
+    estado, referencia = "PENDING", ""
+    tx_id = request.args.get("id", "")
+    if tx_id.replace("-", "").isalnum():
+        try:
+            r = requests.get("%s/transactions/%s" % (wompi_api(), tx_id), timeout=10)
+            tx = r.json().get("data", {})
+            estado = tx.get("status", "PENDING")
+            referencia = tx.get("reference", "")
+        except Exception:
+            app.logger.exception("No se pudo consultar la transacción %s", tx_id)
+    return render_template("pago_respuesta.html", estado=estado, referencia=referencia)
 
 
 # ==========================================

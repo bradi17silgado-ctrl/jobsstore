@@ -72,6 +72,29 @@
         openWA(msg);
     }
 
+    /* ---------- pago con PSE ---------- */
+    function pagarPse() {
+        if (!Object.keys(cart).length) return;
+        var btn = $("#pagarPse"), txt = btn.innerHTML;
+        var nombre = $("#nombreCliente").value.trim();
+        var ciudad = $("#ciudadCliente").value.trim();
+        try { localStorage.setItem(KEY + "_cli", JSON.stringify({ n: nombre, c: ciudad })); } catch (e) {}
+        btn.disabled = true; btn.textContent = "Conectando con PSE…";
+
+        fetch("/pago/pse", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: cart, nombre: nombre, ciudad: ciudad })
+        }).then(function (r) {
+            return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Error"); return d; });
+        }).then(function (d) {
+            window.location.href = d.url;   // checkout de Wompi -> PSE
+        }).catch(function (e) {
+            btn.disabled = false; btn.innerHTML = txt;
+            toast(e.message || "No pudimos iniciar el pago. Intenta de nuevo.");
+        });
+    }
+
     /* ---------- carrito ---------- */
     function add(id, delta) {
         if (!MAP[id]) return;
@@ -181,6 +204,7 @@
     $("#overlay").addEventListener("click", closeDrawer);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDrawer(); });
     $("#enviarPedido").addEventListener("click", enviarPedido);
+    var pse = $("#pagarPse"); if (pse) pse.addEventListener("click", pagarPse);
     $("#vaciarCarrito").addEventListener("click", function () {
         if (confirm("¿Vaciar todo el pedido?")) { cart = {}; save(); render(); }
     });
