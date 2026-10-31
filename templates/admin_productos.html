@@ -1,0 +1,47 @@
+{% extends "admin_base.html" %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<div class="adm-head">
+    <div>
+        <h1>Productos</h1>
+        <p class="adm-sub">{{ productos|length }} en total · {{ productos|selectattr('activo')|list|length }} visibles en la tienda</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('admin_producto_nuevo') }}">+ Publicar producto</a>
+</div>
+
+{% if error_bd %}
+<p class="adm-msg adm-error">{{ error_bd }} Revisa las variables DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME.</p>
+{% else %}
+<div class="table-wrap">
+    <table class="tabla adm-tabla">
+        <thead>
+            <tr><th>Foto</th><th>Producto</th><th>Categoría</th><th class="num">Precio</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+        {% for p in productos %}
+            <tr class="{{ '' if p.activo else 'adm-oculto' }}">
+                <td data-l="Foto"><img class="adm-thumb" src="{{ p.imagen_url }}" alt="" width="56" height="56"></td>
+                <td data-l="Producto"><b>{{ p.nombre }}</b>{% if p.destacado %} <span class="adm-star" title="Aparece en el inicio">★ destacado</span>{% endif %}</td>
+                <td data-l="Categoría">{{ p.categoria_label }}</td>
+                <td data-l="Precio" class="num"><b>{{ p.precio|cop }}</b></td>
+                <td data-l="Estado">{% if p.activo %}<span class="badge">Visible</span>{% else %}<span class="badge badge-off">Oculto</span>{% endif %}</td>
+                <td data-l="Acciones" class="adm-acciones">
+                    <a class="btn btn-sm btn-ghost" href="{{ url_for('admin_producto_editar', pid=p.id) }}">Editar</a>
+                    <form method="post" action="{{ url_for('admin_producto_visibilidad', pid=p.id) }}">
+                        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-ghost" type="submit">{{ 'Ocultar' if p.activo else 'Mostrar' }}</button>
+                    </form>
+                    <form method="post" action="{{ url_for('admin_producto_eliminar', pid=p.id) }}" onsubmit="return confirm('¿Eliminar este producto para siempre? No se puede deshacer.');">
+                        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" class="vacio">Aún no hay productos. Publica el primero.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

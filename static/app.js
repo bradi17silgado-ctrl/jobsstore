@@ -14,7 +14,7 @@
     /* ---------- utilidades ---------- */
     function cop(n) { return "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-    function imgUrl(p) { return "/static/img/" + p.imagen; }
+    function imgUrl(p) { return p.imagen_url; }
 
     function load() {
         try {
@@ -155,10 +155,7 @@
 
         var params = new URLSearchParams(location.search);
         var c = params.get("c");
-        if (c === "gorra" || c === "reloj") state.cat = c;
-
-        function count(cat) { return cards.filter(function (el) { return cat === "todos" || el.dataset.categoria === cat; }).length; }
-        ["todos", "gorra", "reloj"].forEach(function (k) { var s = $("#n-" + k); if (s) s.textContent = "(" + count(k) + ")"; });
+        if (c && cards.some(function (el) { return el.dataset.categoria === c; })) state.cat = c;
 
         function apply() {
             var q = state.q.toLowerCase().trim(), shown = 0;

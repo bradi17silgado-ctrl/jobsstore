@@ -1,0 +1,67 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ 'Editar producto' if producto.id else 'Publicar producto' }}{% endblock %}
+{% block content %}
+<div class="adm-head">
+    <div>
+        <h1>{{ 'Editar producto' if producto.id else 'Publicar producto' }}</h1>
+        <p class="adm-sub">Los cambios se ven en la tienda al instante.</p>
+    </div>
+    <a class="btn btn-ghost" href="{{ url_for('admin_panel') }}">← Volver</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="adm-card adm-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+
+    <label class="field adm-full">
+        <span>Nombre</span>
+        <input type="text" name="nombre" value="{{ producto.nombre }}" maxlength="120" required placeholder="Ej: Gorra Plana Roja">
+    </label>
+
+    <label class="field">
+        <span>Categoría</span>
+        <input type="text" name="categoria" value="{{ producto.categoria }}" list="cats" maxlength="40" required placeholder="gorra, reloj, camiseta…">
+        <datalist id="cats">{% for c in categorias %}<option value="{{ c }}">{% endfor %}</datalist>
+        <em>Elige una existente o escribe una nueva.</em>
+    </label>
+
+    <label class="field">
+        <span>Precio (COP)</span>
+        <input type="text" name="precio" value="{{ producto.precio }}" inputmode="numeric" required placeholder="55000">
+        <em>Solo números, sin puntos ni decimales.</em>
+    </label>
+
+    <label class="field adm-full">
+        <span>Descripción <em>(opcional)</em></span>
+        <textarea name="descripcion" rows="3" maxlength="500" placeholder="Material, tallas, detalles…">{{ producto.descripcion }}</textarea>
+    </label>
+
+    <div class="field adm-full">
+        <span>Foto</span>
+        <div class="adm-foto">
+            <img id="vista" class="adm-prev" src="{{ producto.imagen_url or url_for('static', filename='img/logo-emblema.png') }}" alt="Vista previa" width="120" height="120">
+            <div>
+                <input type="file" name="foto" id="foto" accept="image/jpeg,image/png,image/webp,image/gif">
+                <em>JPG, PNG, WEBP o GIF · máx. 3 MB · mejor cuadrada (ej. 800×800).</em>
+                {% if producto.tiene_foto %}
+                <label class="adm-check"><input type="checkbox" name="quitar_foto" value="1"> Quitar la foto subida</label>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <label class="adm-check"><input type="checkbox" name="activo" value="1" {{ 'checked' if producto.activo }}> Visible en la tienda</label>
+    <label class="adm-check"><input type="checkbox" name="destacado" value="1" {{ 'checked' if producto.destacado }}> Mostrar en «Productos destacados» del inicio</label>
+
+    <div class="adm-full adm-botones">
+        <button type="submit" class="btn btn-primary btn-lg">{{ 'Guardar cambios' if producto.id else 'Publicar producto' }}</button>
+        <a class="btn btn-ghost btn-lg" href="{{ url_for('admin_panel') }}">Cancelar</a>
+    </div>
+</form>
+
+<script>
+    document.getElementById("foto").addEventListener("change", function (e) {
+        var f = e.target.files[0];
+        if (f) document.getElementById("vista").src = URL.createObjectURL(f);
+    });
+</script>
+{% endblock %}

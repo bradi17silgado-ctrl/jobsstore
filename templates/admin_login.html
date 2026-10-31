@@ -1,0 +1,17 @@
+{% extends "admin_base.html" %}
+{% block title %}Ingresar{% endblock %}
+{% block content %}
+<section class="adm-login">
+    <h1>Panel de administrador</h1>
+    <p class="adm-sub">Ingresa con la contraseña para gestionar los productos.</p>
+    <form method="post" class="adm-card">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <label class="field">
+            <span>Contraseña</span>
+            <input type="password" name="password" autocomplete="current-password" required autofocus>
+        </label>
+        {% if error %}<p class="adm-msg adm-error">{{ error }}</p>{% endif %}
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+    </form>
+</section>
+{% endblock %}

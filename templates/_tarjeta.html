@@ -1,0 +1,20 @@
+{% macro tarjeta(p) %}
+<article class="card" data-id="{{ p.id }}" data-categoria="{{ p.categoria }}" data-nombre="{{ p.nombre|lower }}" data-precio="{{ p.precio }}">
+    <div class="card-img">
+        <img src="{{ p.imagen_url }}" alt="{{ p.nombre }}" loading="lazy" width="640" height="640">
+        <span class="chip chip-cat">{{ p.categoria_label }}</span>
+    </div>
+    <div class="card-body">
+        <h3>{{ p.nombre }}</h3>
+        {% if p.descripcion %}<p class="card-desc">{{ p.descripcion }}</p>{% endif %}
+        <p class="card-precio">{{ p.precio|cop }} <small>COP</small></p>
+        <div class="card-actions">
+            <button type="button" class="btn btn-primary" data-add="{{ p.id }}">Agregar al pedido</button>
+            <button type="button" class="btn btn-wa-outline" data-consultar="{{ p.id }}" aria-label="Consultar {{ p.nombre }} por WhatsApp">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
+                <span>Consultar</span>
+            </button>
+        </div>
+    </div>
+</article>
+{% endmacro %}

@@ -38,8 +38,9 @@
         <nav class="nav" id="nav" aria-label="Principal">
             <a href="{{ url_for('inicio') }}" {% if request.endpoint == 'inicio' %}aria-current="page"{% endif %}>Inicio</a>
             <a href="{{ url_for('catalogo') }}" {% if request.endpoint == 'catalogo' %}aria-current="page"{% endif %}>Catálogo</a>
-            <a href="{{ url_for('catalogo') }}?c=gorra">Gorras</a>
-            <a href="{{ url_for('catalogo') }}?c=reloj">Relojes</a>
+            {% for slug, etiqueta, n in categorias %}
+            <a href="{{ url_for('catalogo') }}?c={{ slug }}">{{ etiqueta }}</a>
+            {% endfor %}
         </nav>
 
         <div class="topbar-actions">
@@ -70,8 +71,9 @@
         <div>
             <h4>Tienda</h4>
             <a href="{{ url_for('catalogo') }}">Catálogo completo</a>
-            <a href="{{ url_for('catalogo') }}?c=gorra">Gorras</a>
-            <a href="{{ url_for('catalogo') }}?c=reloj">Relojes</a>
+            {% for slug, etiqueta, n in categorias %}
+            <a href="{{ url_for('catalogo') }}?c={{ slug }}">{{ etiqueta }}</a>
+            {% endfor %}
         </div>
         <div>
             <h4>Atención</h4>

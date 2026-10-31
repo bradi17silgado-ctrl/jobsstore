@@ -1,14 +1,25 @@
-from flask import Flask, render_template, request, redirect, abort, jsonify
+from flask import (Flask, render_template, request, redirect, abort, jsonify,
+                   session, flash, url_for, Response, g)
 from urllib.parse import urlencode
 import hashlib
+import re
 import secrets
 import time
+import unicodedata
+from functools import wraps
 import mysql.connector
 import os
 import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "sager-secret-2025")
+app.config.update(
+    MAX_CONTENT_LENGTH=6 * 1024 * 1024,          # tope de cualquier subida
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    # En producción (https) pon SESSION_COOKIE_SECURE=1
+    SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE") == "1",
+)
 
 
 # ==========================================
@@ -22,9 +33,11 @@ NEGOCIO = {
     "whatsapp": os.environ.get("WHATSAPP_NUMBER", "573227879835"),
 }
 
-# Para cambiar productos o precios, edita esta lista.
+# Productos iniciales. Solo se copian a la base de datos UNA vez (cuando se crea
+# la tabla "productos"); desde ahí se gestionan en /admin.
+# También sirven de respaldo si la base de datos no responde.
 # "destacado": True -> aparece en la página de inicio.
-PRODUCTOS = [
+PRODUCTOS_INICIALES = [
     # ---------- GORRAS ----------
     {"id": "g1", "nombre": "Gorra Plana Azul Royal", "categoria": "gorra",
      "descripcion": "Corte plano, ajuste firme y bordado frontal.",
@@ -77,7 +90,13 @@ def formato_cop(valor):
 
 @app.context_processor
 def inyectar_globales():
-    return {"negocio": NEGOCIO, "todos_productos": PRODUCTOS, "pse_activo": pse_configurado()}
+    productos = obtener_productos()
+    return {
+        "negocio": NEGOCIO,
+        "todos_productos": productos,
+        "categorias": categorias_de(productos),
+        "pse_activo": pse_configurado(),
+    }
 
 
 # ==========================================
@@ -95,6 +114,188 @@ def get_db():
 
 
 # ==========================================
+# PRODUCTOS (base de datos)
+# Tabla "productos" en MySQL. Las fotos subidas desde el panel se guardan en la
+# propia base (no en disco) para que no se pierdan cuando Railway reinicia o
+# vuelve a desplegar la app.
+# ==========================================
+
+CATEGORIAS_CONOCIDAS = {"gorra": "Gorras", "reloj": "Relojes"}
+TIPOS_IMAGEN = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif"}
+MAX_IMAGEN = 3 * 1024 * 1024
+PRECIO_MAX = 99_999_999
+
+_esquema_listo = False
+
+
+def slug(texto):
+    """'Gorra Plana' -> 'gorra-plana' (sin tildes ni símbolos)."""
+    t = unicodedata.normalize("NFKD", str(texto or "")).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")[:40]
+
+
+def etiqueta_categoria(cat):
+    return CATEGORIAS_CONOCIDAS.get(cat) or cat.replace("-", " ").capitalize()
+
+
+def detectar_imagen(datos):
+    """Devuelve el tipo MIME real según los primeros bytes (no confía en el nombre)."""
+    if datos[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if datos[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if datos[:4] == b"RIFF" and datos[8:12] == b"WEBP":
+        return "image/webp"
+    if datos[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    return None
+
+
+def asegurar_esquema():
+    """Crea la tabla de productos si no existe y, solo la primera vez, la llena
+    con PRODUCTOS_INICIALES. Así borrar un producto no lo hace reaparecer."""
+    global _esquema_listo
+    if _esquema_listo:
+        return
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM information_schema.tables "
+                    "WHERE table_schema = DATABASE() AND table_name = 'productos'")
+        existia = cur.fetchone()[0] > 0
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS productos (
+                id           VARCHAR(20)  NOT NULL PRIMARY KEY,
+                nombre       VARCHAR(120) NOT NULL,
+                categoria    VARCHAR(40)  NOT NULL,
+                descripcion  VARCHAR(500) NOT NULL DEFAULT '',
+                precio       INT          NOT NULL,
+                imagen       VARCHAR(200) NULL,
+                imagen_data  MEDIUMBLOB   NULL,
+                imagen_tipo  VARCHAR(40)  NULL,
+                destacado    TINYINT(1)   NOT NULL DEFAULT 0,
+                activo       TINYINT(1)   NOT NULL DEFAULT 1,
+                orden        INT          NOT NULL DEFAULT 0,
+                actualizado  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                          ON UPDATE CURRENT_TIMESTAMP
+            ) DEFAULT CHARSET = utf8mb4
+        """)
+        if not existia:
+            for i, p in enumerate(PRODUCTOS_INICIALES):
+                cur.execute(
+                    "INSERT IGNORE INTO productos "
+                    "(id, nombre, categoria, descripcion, precio, imagen, destacado, activo, orden) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, 1, %s)",
+                    (p["id"], p["nombre"], p["categoria"], p["descripcion"], p["precio"],
+                     p["imagen"], 1 if p["destacado"] else 0, (i + 1) * 10))
+        conn.commit()
+        _esquema_listo = True
+    finally:
+        conn.close()
+
+
+def _producto_dict(fila):
+    """Fila de la BD -> dict listo para plantillas y JS (sin los bytes de la foto)."""
+    if fila["tiene_foto"]:
+        imagen_url = url_for("foto_producto", pid=fila["id"], v=fila["version"])
+    elif fila["imagen"]:
+        imagen_url = url_for("static", filename="img/" + fila["imagen"])
+    else:
+        imagen_url = url_for("static", filename="img/logo-emblema.png")
+    return {
+        "id": fila["id"],
+        "nombre": fila["nombre"],
+        "categoria": fila["categoria"],
+        "categoria_label": etiqueta_categoria(fila["categoria"]),
+        "descripcion": fila["descripcion"],
+        "precio": int(fila["precio"]),
+        "imagen_url": imagen_url,
+        "tiene_foto": bool(fila["tiene_foto"]),
+        "destacado": bool(fila["destacado"]),
+        "activo": bool(fila["activo"]),
+    }
+
+
+def _productos_respaldo():
+    out = []
+    for p in PRODUCTOS_INICIALES:
+        q = dict(p)
+        q.update(categoria_label=etiqueta_categoria(p["categoria"]), activo=True, tiene_foto=False,
+                 imagen_url=url_for("static", filename="img/" + p["imagen"]))
+        out.append(q)
+    return out
+
+
+SQL_PRODUCTO = ("SELECT id, nombre, categoria, descripcion, precio, imagen, destacado, activo, "
+                "(imagen_data IS NOT NULL) AS tiene_foto, UNIX_TIMESTAMP(actualizado) AS version "
+                "FROM productos ")
+
+
+def obtener_productos(incluir_ocultos=False):
+    """Productos de la tienda. En las páginas públicas, si la BD falla se usa la
+    lista inicial para que la tienda siga viva; en el panel el error se propaga."""
+    if not incluir_ocultos and hasattr(g, "_productos"):
+        return g._productos
+    conn = None
+    try:
+        asegurar_esquema()
+        conn = get_db()
+        cur = conn.cursor(dictionary=True)
+        cur.execute(SQL_PRODUCTO + ("" if incluir_ocultos else "WHERE activo = 1 ")
+                    + "ORDER BY orden ASC, nombre ASC")
+        lista = [_producto_dict(f) for f in cur.fetchall()]
+    except Exception:
+        if incluir_ocultos:
+            raise
+        app.logger.exception("No se pudieron leer los productos; usando la lista inicial")
+        lista = _productos_respaldo()
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+    if not incluir_ocultos:
+        g._productos = lista
+    return lista
+
+
+def obtener_producto(pid):
+    conn = get_db()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute(SQL_PRODUCTO + "WHERE id = %s", (pid,))
+        fila = cur.fetchone()
+        return _producto_dict(fila) if fila else None
+    finally:
+        conn.close()
+
+
+def categorias_de(productos):
+    """[(slug, etiqueta, cantidad)] solo de categorías con productos visibles."""
+    cuenta = {}
+    for p in productos:
+        cuenta[p["categoria"]] = cuenta.get(p["categoria"], 0) + 1
+    orden = sorted(cuenta, key=lambda c: (c not in CATEGORIAS_CONOCIDAS, etiqueta_categoria(c)))
+    return [(c, etiqueta_categoria(c), cuenta[c]) for c in orden]
+
+
+@app.route("/producto-img/<pid>")
+def foto_producto(pid):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT imagen_data, imagen_tipo FROM productos WHERE id = %s AND imagen_data IS NOT NULL", (pid,))
+        fila = cur.fetchone()
+    finally:
+        conn.close()
+    if not fila:
+        abort(404)
+    resp = Response(bytes(fila[0]), mimetype=fila[1] or "image/jpeg")
+    # La URL lleva ?v=<versión>, así que se puede cachear "para siempre".
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
+
+
+# ==========================================
 # PÁGINAS PÚBLICAS
 # ==========================================
 
@@ -105,13 +306,13 @@ def home():
 
 @app.route("/inicio")
 def inicio():
-    destacados = [p for p in PRODUCTOS if p["destacado"]]
+    destacados = [p for p in obtener_productos() if p["destacado"]]
     return render_template("index.html", destacados=destacados)
 
 
 @app.route("/catalogo")
 def catalogo():
-    return render_template("catalogo.html", productos=PRODUCTOS)
+    return render_template("catalogo.html", productos=obtener_productos())
 
 
 # ==========================================
@@ -162,7 +363,7 @@ def pago_pse():
     nombre = str(datos.get("nombre") or "").strip()[:60] or "Cliente web"
     ciudad = str(datos.get("ciudad") or "").strip()[:80]
 
-    catalogo = {p["id"]: p for p in PRODUCTOS}
+    catalogo = {p["id"]: p for p in obtener_productos()}
     lineas = []
     for pid, cant in items.items():
         try:
@@ -277,15 +478,290 @@ def pago_respuesta():
 
 
 # ==========================================
+# ADMINISTRACIÓN
+# Variable de entorno ADMIN_PASSWORD = contraseña del panel (/admin).
+# (Si no existe se usa ADMIN_KEY, la clave que ya tenías para /compras.)
+# Sin ninguna de las dos, el panel queda desactivado.
+# ==========================================
+
+def clave_admin():
+    return os.environ.get("ADMIN_PASSWORD") or os.environ.get("ADMIN_KEY") or ""
+
+
+def iguales(a, b):
+    return secrets.compare_digest(str(a).encode("utf-8"), str(b).encode("utf-8"))
+
+
+def es_admin():
+    return session.get("admin") is True
+
+
+def admin_requerido(vista):
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if not clave_admin():
+            abort(404)
+        if not es_admin():
+            return redirect(url_for("admin_login", next=request.path))
+        return vista(*args, **kwargs)
+    return envoltura
+
+
+def token_csrf():
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_urlsafe(24)
+    return session["csrf"]
+
+
+app.jinja_env.globals["csrf_token"] = token_csrf
+
+
+@app.before_request
+def proteger_admin():
+    """Todo POST bajo /admin debe traer el token CSRF de la sesión."""
+    if request.method == "POST" and request.path.startswith("/admin"):
+        enviado = request.form.get("csrf", "")
+        if not enviado or not iguales(enviado, session.get("csrf", "")):
+            abort(400)
+
+
+@app.after_request
+def no_indexar_admin(resp):
+    if request.path.startswith("/admin") or request.path == "/compras":
+        resp.headers["Cache-Control"] = "no-store"
+        resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return resp
+
+
+_intentos = {}   # ip -> [marcas de tiempo de intentos fallidos]
+
+
+def _ip():
+    return request.remote_addr or "?"
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if not clave_admin():
+        abort(404)
+    destino = request.args.get("next", "")
+    if not destino.startswith("/admin") or destino.startswith("//"):
+        destino = url_for("admin_panel")
+    if es_admin():
+        return redirect(destino)
+
+    error = None
+    if request.method == "POST":
+        ahora = time.time()
+        recientes = [t for t in _intentos.get(_ip(), []) if ahora - t < 300]
+        if len(recientes) >= 5:
+            error = "Demasiados intentos. Espera unos minutos e inténtalo de nuevo."
+        elif iguales(request.form.get("password", ""), clave_admin()):
+            _intentos.pop(_ip(), None)
+            session.clear()
+            session["admin"] = True
+            session.permanent = False
+            return redirect(destino)
+        else:
+            recientes.append(ahora)
+            error = "Contraseña incorrecta."
+        _intentos[_ip()] = recientes
+    return render_template("admin_login.html", error=error)
+
+
+@app.route("/admin/salir", methods=["POST"])
+def admin_salir():
+    session.clear()
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/admin")
+@admin_requerido
+def admin_panel():
+    try:
+        productos = obtener_productos(incluir_ocultos=True)
+        error_bd = None
+    except Exception:
+        app.logger.exception("No se pudo leer la tabla de productos")
+        productos, error_bd = [], "No se pudo conectar con la base de datos."
+    return render_template("admin_productos.html", productos=productos, error_bd=error_bd)
+
+
+def leer_formulario():
+    """Valida el formulario de producto. Devuelve (datos, imagen, errores)."""
+    f = request.form
+    errores = []
+
+    nombre = " ".join(f.get("nombre", "").split())
+    if not nombre:
+        errores.append("Escribe el nombre del producto.")
+    elif len(nombre) > 120:
+        errores.append("El nombre es demasiado largo (máx. 120 caracteres).")
+
+    categoria = slug(f.get("categoria", ""))
+    if not categoria:
+        errores.append("Indica la categoría (por ejemplo: gorra, reloj, camiseta).")
+
+    descripcion = f.get("descripcion", "").strip()
+    if len(descripcion) > 500:
+        errores.append("La descripción es demasiado larga (máx. 500 caracteres).")
+
+    digitos = re.sub(r"\D", "", f.get("precio", ""))
+    precio = int(digitos) if digitos else 0
+    if precio <= 0:
+        errores.append("Escribe un precio mayor que cero (en pesos, sin decimales).")
+    elif precio > PRECIO_MAX:
+        errores.append("El precio es demasiado alto.")
+
+    imagen = None
+    archivo = request.files.get("foto")
+    if archivo and archivo.filename:
+        datos = archivo.read(MAX_IMAGEN + 1)
+        if len(datos) > MAX_IMAGEN:
+            errores.append("La foto pesa más de 3 MB. Usa una más liviana.")
+        else:
+            tipo = detectar_imagen(datos)
+            if tipo is None:
+                errores.append("La foto debe ser JPG, PNG, WEBP o GIF.")
+            else:
+                imagen = (datos, tipo)
+
+    datos_producto = {
+        "nombre": nombre, "categoria": categoria, "descripcion": descripcion,
+        "precio": precio,
+        "destacado": 1 if f.get("destacado") else 0,
+        "activo": 1 if f.get("activo") else 0,
+    }
+    return datos_producto, imagen, errores
+
+
+@app.route("/admin/productos/nuevo", methods=["GET", "POST"])
+@admin_requerido
+def admin_producto_nuevo():
+    asegurar_esquema()
+    categorias = categorias_admin()
+    if request.method == "POST":
+        datos, imagen, errores = leer_formulario()
+        if not errores:
+            pid = "p" + secrets.token_hex(4)
+            conn = get_db()
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT COALESCE(MIN(orden), 0) FROM productos")
+                orden = int(cur.fetchone()[0]) - 10      # los nuevos salen primero
+                cur.execute(
+                    "INSERT INTO productos (id, nombre, categoria, descripcion, precio, "
+                    "imagen_data, imagen_tipo, destacado, activo, orden) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (pid, datos["nombre"], datos["categoria"], datos["descripcion"], datos["precio"],
+                     imagen[0] if imagen else None, imagen[1] if imagen else None,
+                     datos["destacado"], datos["activo"], orden))
+                conn.commit()
+            finally:
+                conn.close()
+            flash("Producto publicado: %s" % datos["nombre"], "ok")
+            return redirect(url_for("admin_panel"))
+        for e in errores:
+            flash(e, "error")
+        producto = dict(datos, id=None, tiene_foto=False, imagen_url=None)
+        return render_template("admin_form.html", producto=producto, categorias=categorias), 400
+    producto = {"id": None, "nombre": "", "categoria": "", "descripcion": "", "precio": "",
+                "destacado": False, "activo": True, "tiene_foto": False, "imagen_url": None}
+    return render_template("admin_form.html", producto=producto, categorias=categorias)
+
+
+@app.route("/admin/productos/<pid>/editar", methods=["GET", "POST"])
+@admin_requerido
+def admin_producto_editar(pid):
+    actual = obtener_producto(pid)
+    if not actual:
+        abort(404)
+    categorias = categorias_admin()
+    if request.method == "POST":
+        datos, imagen, errores = leer_formulario()
+        if not errores:
+            quitar = bool(request.form.get("quitar_foto")) and not imagen
+            conn = get_db()
+            try:
+                cur = conn.cursor()
+                sql = ("UPDATE productos SET nombre=%s, categoria=%s, descripcion=%s, precio=%s, "
+                       "destacado=%s, activo=%s")
+                params = [datos["nombre"], datos["categoria"], datos["descripcion"], datos["precio"],
+                          datos["destacado"], datos["activo"]]
+                if imagen:
+                    sql += ", imagen_data=%s, imagen_tipo=%s"
+                    params += [imagen[0], imagen[1]]
+                elif quitar:
+                    sql += ", imagen_data=NULL, imagen_tipo=NULL"
+                cur.execute(sql + " WHERE id=%s", params + [pid])
+                conn.commit()
+            finally:
+                conn.close()
+            flash("Cambios guardados: %s" % datos["nombre"], "ok")
+            return redirect(url_for("admin_panel"))
+        for e in errores:
+            flash(e, "error")
+        producto = dict(actual, **datos)
+        producto["destacado"], producto["activo"] = bool(datos["destacado"]), bool(datos["activo"])
+        return render_template("admin_form.html", producto=producto, categorias=categorias), 400
+    return render_template("admin_form.html", producto=actual, categorias=categorias)
+
+
+@app.route("/admin/productos/<pid>/visibilidad", methods=["POST"])
+@admin_requerido
+def admin_producto_visibilidad(pid):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE productos SET activo = 1 - activo WHERE id = %s", (pid,))
+        conn.commit()
+        if cur.rowcount == 0:
+            abort(404)
+    finally:
+        conn.close()
+    flash("Visibilidad actualizada.", "ok")
+    return redirect(url_for("admin_panel"))
+
+
+@app.route("/admin/productos/<pid>/eliminar", methods=["POST"])
+@admin_requerido
+def admin_producto_eliminar(pid):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM productos WHERE id = %s", (pid,))
+        conn.commit()
+        if cur.rowcount == 0:
+            abort(404)
+    finally:
+        conn.close()
+    flash("Producto eliminado.", "ok")
+    return redirect(url_for("admin_panel"))
+
+
+def categorias_admin():
+    """Categorías ya usadas (incluye productos ocultos) para sugerir en el formulario."""
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT categoria FROM productos ORDER BY categoria")
+        usadas = {r[0] for r in cur.fetchall()}
+    finally:
+        conn.close()
+    return sorted(usadas | set(CATEGORIAS_CONOCIDAS))
+
+
+# ==========================================
 # COMPRAS (ADMINISTRACIÓN)
-# Si defines la variable de entorno ADMIN_KEY, solo se puede entrar con
-#   /compras?key=TU_CLAVE
+# Solo con sesión de administrador, o con /compras?key=TU_CLAVE
 # ==========================================
 
 @app.route("/compras")
 def compras():
-    clave = os.environ.get("ADMIN_KEY")
-    if clave and request.args.get("key") != clave:
+    clave = clave_admin()
+    if not clave:
+        abort(404)
+    if not es_admin() and not iguales(request.args.get("key", ""), clave):
         abort(404)
 
     conn = None

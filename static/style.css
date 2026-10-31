@@ -281,3 +281,58 @@ body.drawer-open .fab-wa { display: none; }
 .pago-ok .pago-ico { background: var(--wa-dark); }
 .pago-pend .pago-ico { background: var(--orange); }
 .pago-fail .pago-ico { background: #c0392b; }
+
+
+/* =========================================================
+   Panel de administración
+   ========================================================= */
+body.adm { background: var(--bg-alt); min-height: 100vh; }
+.adm-top { background: #fff; border-bottom: 1px solid var(--line); }
+.adm-top-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; }
+.adm-tag { background: var(--orange); color: #fff; font: 700 11px var(--font-b); letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; margin-left: 6px; }
+.adm-nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-weight: 600; font-size: 14px; }
+.adm-nav a { text-decoration: none; color: var(--muted); }
+.adm-nav a:hover, .adm-nav a[aria-current="page"] { color: var(--navy); }
+.adm-nav form { margin: 0; }
+.adm-nav .link-btn { padding: 0; margin: 0; }
+.adm-main { padding-top: 28px; padding-bottom: 64px; }
+.adm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.adm-head h1 { font-size: clamp(24px, 3vw, 32px); }
+.adm-sub { color: var(--muted); margin-top: 4px; }
+.adm-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+.adm-login { max-width: 400px; margin: 48px auto 0; display: grid; gap: 8px; }
+.adm-login .adm-card { display: grid; gap: 16px; margin-top: 12px; }
+.adm-flash { display: grid; gap: 8px; margin-bottom: 16px; }
+.adm-msg { padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 500; }
+.adm-ok { background: #dff5e8; color: #14753f; }
+.adm-error { background: #fde8e8; color: #b42318; }
+.adm-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.adm-full { grid-column: 1 / -1; }
+.adm-form textarea, .adm-form input[type="text"], .adm-form input[type="password"], .adm-card input[type="password"] {
+    font: 400 15px var(--font-b); padding: 11px 14px; border: 1px solid #cfd8e6; border-radius: 12px; background: #fff; color: var(--ink); width: 100%;
+}
+.adm-form textarea { resize: vertical; }
+.adm-form textarea:focus, .adm-form input:focus, .adm-card input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(25, 184, 224, .2); }
+.adm-form .field em { margin-top: 2px; font-size: 12px; }
+.adm-foto { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.adm-foto > div { display: grid; gap: 8px; }
+.adm-prev { width: 120px; height: 120px; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-alt); }
+.adm-check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--ink); }
+.adm-botones { display: flex; gap: 12px; flex-wrap: wrap; }
+.adm-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.adm-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.adm-acciones form { margin: 0; }
+.adm-tabla td { vertical-align: middle; }
+.adm-oculto { opacity: .6; }
+.adm-star { color: var(--orange); font-size: 12px; font-weight: 600; margin-left: 4px; }
+.badge-off { background: #eceff4; color: var(--muted); }
+.btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+.btn-ghost { background: #fff; color: var(--navy); border-color: #cfd8e6; }
+.btn-ghost:hover { border-color: var(--blue); background: #f4f8ff; }
+.btn-danger { background: #fff; color: #b42318; border-color: #f3c3be; }
+.btn-danger:hover { background: #fde8e8; border-color: #e5877e; }
+@media (max-width: 760px) {
+    .adm-form { grid-template-columns: 1fr; padding: 18px; }
+    .adm-tabla td.adm-acciones { justify-content: flex-start; }
+    .adm-tabla td[data-l="Foto"]::before, .adm-tabla td.adm-acciones::before { content: none; }
+}

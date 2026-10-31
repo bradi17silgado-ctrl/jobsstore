@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_tarjeta.html" import tarjeta %}
 {% block title %}Catálogo | OBSCOOL{% endblock %}
 {% block desc %}Catálogo OBSCOOL: gorras y relojes. Agrega al pedido y finaliza por WhatsApp.{% endblock %}
 
@@ -14,9 +15,10 @@
     <div class="wrap">
         <div class="toolbar">
             <div class="tabs" role="tablist" aria-label="Categorías">
-                <button type="button" class="tab is-on" data-cat="todos" role="tab" aria-selected="true">Todos <span id="n-todos"></span></button>
-                <button type="button" class="tab" data-cat="gorra" role="tab" aria-selected="false">Gorras <span id="n-gorra"></span></button>
-                <button type="button" class="tab" data-cat="reloj" role="tab" aria-selected="false">Relojes <span id="n-reloj"></span></button>
+                <button type="button" class="tab is-on" data-cat="todos" role="tab" aria-selected="true">Todos <span>({{ productos|length }})</span></button>
+                {% for slug, etiqueta, n in categorias %}
+                <button type="button" class="tab" data-cat="{{ slug }}" role="tab" aria-selected="false">{{ etiqueta }} <span>({{ n }})</span></button>
+                {% endfor %}
             </div>
             <div class="tools">
                 <input type="search" id="buscador" placeholder="Buscar producto…" aria-label="Buscar productos">
@@ -29,222 +31,7 @@
         </div>
 
         <div class="grid" id="productos">
-            <article class="card" data-id="g1" data-categoria="gorra" data-nombre="gorra plana azul royal" data-precio="55000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/gorra-azul-royal.webp') }}" alt="Gorra Plana Azul Royal" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Gorras</span>
-                </div>
-                <div class="card-body">
-                    <h3>Gorra Plana Azul Royal</h3>
-                    <p class="card-desc">Corte plano, ajuste firme y bordado frontal.</p>
-                    <p class="card-precio">$55.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="g1">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="g1" aria-label="Consultar Gorra Plana Azul Royal por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="g2" data-categoria="gorra" data-nombre="gorra clásica negra" data-precio="45000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/gorra-negra-clasica.webp') }}" alt="Gorra Clásica Negra" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Gorras</span>
-                </div>
-                <div class="card-body">
-                    <h3>Gorra Clásica Negra</h3>
-                    <p class="card-desc">Diseño curvo y ligero para uso diario.</p>
-                    <p class="card-precio">$45.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="g2">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="g2" aria-label="Consultar Gorra Clásica Negra por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="g3" data-categoria="gorra" data-nombre="gorra plana azul marino" data-precio="40000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/gorra-azul-marino.webp') }}" alt="Gorra Plana Azul Marino" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Gorras</span>
-                </div>
-                <div class="card-body">
-                    <h3>Gorra Plana Azul Marino</h3>
-                    <p class="card-desc">Estilo urbano que combina con todo.</p>
-                    <p class="card-precio">$40.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="g3">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="g3" aria-label="Consultar Gorra Plana Azul Marino por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="g4" data-categoria="gorra" data-nombre="gorra plana verde y dorado" data-precio="55000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/gorra-verde-dorado.webp') }}" alt="Gorra Plana Verde y Dorado" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Gorras</span>
-                </div>
-                <div class="card-body">
-                    <h3>Gorra Plana Verde y Dorado</h3>
-                    <p class="card-desc">Contraste de colores para destacar.</p>
-                    <p class="card-precio">$55.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="g4">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="g4" aria-label="Consultar Gorra Plana Verde y Dorado por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="g5" data-categoria="gorra" data-nombre="gorra plana negra y roja" data-precio="55000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/gorra-negra-roja.webp') }}" alt="Gorra Plana Negra y Roja" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Gorras</span>
-                </div>
-                <div class="card-body">
-                    <h3>Gorra Plana Negra y Roja</h3>
-                    <p class="card-desc">Look deportivo con detalle bordado.</p>
-                    <p class="card-precio">$55.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="g5">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="g5" aria-label="Consultar Gorra Plana Negra y Roja por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="g6" data-categoria="gorra" data-nombre="gorra crema y verde" data-precio="55000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/gorra-crema-verde.webp') }}" alt="Gorra Crema y Verde" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Gorras</span>
-                </div>
-                <div class="card-body">
-                    <h3>Gorra Crema y Verde</h3>
-                    <p class="card-desc">Tono claro con visera contrastante.</p>
-                    <p class="card-precio">$55.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="g6">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="g6" aria-label="Consultar Gorra Crema y Verde por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="r1" data-categoria="reloj" data-nombre="reloj elegante dorado" data-precio="120000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/reloj-dorado.webp') }}" alt="Reloj Elegante Dorado" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Relojes</span>
-                </div>
-                <div class="card-body">
-                    <h3>Reloj Elegante Dorado</h3>
-                    <p class="card-desc">Diseño clásico para ocasiones especiales.</p>
-                    <p class="card-precio">$120.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="r1">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="r1" aria-label="Consultar Reloj Elegante Dorado por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="r2" data-categoria="reloj" data-nombre="reloj minimalista azul hielo" data-precio="95000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/reloj-azul-hielo.webp') }}" alt="Reloj Minimalista Azul Hielo" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Relojes</span>
-                </div>
-                <div class="card-body">
-                    <h3>Reloj Minimalista Azul Hielo</h3>
-                    <p class="card-desc">Esfera limpia, moderno y versátil.</p>
-                    <p class="card-precio">$95.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="r2">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="r2" aria-label="Consultar Reloj Minimalista Azul Hielo por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="r3" data-categoria="reloj" data-nombre="reloj deportivo acero" data-precio="110000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/reloj-deportivo-acero.webp') }}" alt="Reloj Deportivo Acero" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Relojes</span>
-                </div>
-                <div class="card-body">
-                    <h3>Reloj Deportivo Acero</h3>
-                    <p class="card-desc">Robusto y con estilo para todos los días.</p>
-                    <p class="card-precio">$110.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="r3">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="r3" aria-label="Consultar Reloj Deportivo Acero por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="r4" data-categoria="reloj" data-nombre="reloj esqueleto oro rosa" data-precio="110000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/reloj-esqueleto-oro-rosa.webp') }}" alt="Reloj Esqueleto Oro Rosa" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Relojes</span>
-                </div>
-                <div class="card-body">
-                    <h3>Reloj Esqueleto Oro Rosa</h3>
-                    <p class="card-desc">Esfera esqueleto con correa de silicona.</p>
-                    <p class="card-precio">$110.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="r4">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="r4" aria-label="Consultar Reloj Esqueleto Oro Rosa por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="r5" data-categoria="reloj" data-nombre="reloj esqueleto naranja" data-precio="110000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/reloj-esqueleto-naranja.webp') }}" alt="Reloj Esqueleto Naranja" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Relojes</span>
-                </div>
-                <div class="card-body">
-                    <h3>Reloj Esqueleto Naranja</h3>
-                    <p class="card-desc">Caja negra y correa naranja llamativa.</p>
-                    <p class="card-precio">$110.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="r5">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="r5" aria-label="Consultar Reloj Esqueleto Naranja por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
-            <article class="card" data-id="r6" data-categoria="reloj" data-nombre="reloj cronógrafo titanio" data-precio="110000">
-                <div class="card-img">
-                    <img src="{{ url_for('static', filename='img/productos/reloj-cronografo-titanio.webp') }}" alt="Reloj Cronógrafo Titanio" loading="lazy" width="640" height="640">
-                    <span class="chip chip-cat">Relojes</span>
-                </div>
-                <div class="card-body">
-                    <h3>Reloj Cronógrafo Titanio</h3>
-                    <p class="card-desc">Acabado gris titanio de aire premium.</p>
-                    <p class="card-precio">$110.000 <small>COP</small></p>
-                    <div class="card-actions">
-                        <button type="button" class="btn btn-primary" data-add="r6">Agregar al pedido</button>
-                        <button type="button" class="btn btn-wa-outline" data-consultar="r6" aria-label="Consultar Reloj Cronógrafo Titanio por WhatsApp">
-                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-wa"/></svg>
-                            <span>Consultar</span>
-                        </button>
-                    </div>
-                </div>
-            </article>
+            {% for p in productos %}{{ tarjeta(p) }}{% endfor %}
         </div>
 
         <div class="empty" id="sinResultados" hidden>
