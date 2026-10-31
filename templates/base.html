@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}OBSCOOL | Gorras y relojes con estilo{% endblock %}</title>
-    <meta name="description" content="{% block desc %}OBSCOOL: gorras y relojes con estilo. Elige tus productos y haz tu pedido o consulta directo por WhatsApp.{% endblock %}">
+    <title>{% block title %}JOBS Store | Gorras y relojes con estilo{% endblock %}</title>
+    <meta name="description" content="{% block desc %}JOBS Store: gorras y relojes con estilo. Elige tus productos y haz tu pedido o consulta directo por WhatsApp.{% endblock %}">
     <meta name="theme-color" content="#0b2a6b">
-    <meta property="og:title" content="OBSCOOL | Gorras y relojes con estilo">
+    <meta property="og:title" content="JOBS Store | Gorras y relojes con estilo">
     <meta property="og:description" content="Elige tus productos y haz tu pedido directo por WhatsApp.">
-    <meta property="og:image" content="{{ url_for('static', filename='obscool.png', _external=True) }}">
+    <meta property="og:image" content="{{ url_for('static', filename='jobsstore.png', _external=True) }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,9 +30,9 @@
 
 <header class="topbar">
     <div class="wrap topbar-in">
-        <a href="{{ url_for('inicio') }}" class="brand" aria-label="OBSCOOL, ir al inicio">
+        <a href="{{ url_for('inicio') }}" class="brand" aria-label="JOBS Store, ir al inicio">
             <img src="{{ url_for('static', filename='img/logo-emblema.png') }}" alt="" width="44" height="39">
-            <span class="brand-txt"><b>OBS</b><i>COOL</i></span>
+            <span class="brand-txt"><b>JOBS</b><i>Store</i></span>
         </a>
 
         <nav class="nav" id="nav" aria-label="Principal">
@@ -64,7 +64,7 @@
         <div>
             <div class="brand brand-foot">
                 <img src="{{ url_for('static', filename='img/logo-emblema.png') }}" alt="" width="40" height="36">
-                <span class="brand-txt"><b>OBS</b><i>COOL</i></span>
+                <span class="brand-txt"><b>JOBS</b><i>Store</i></span>
             </div>
             <p class="foot-lema">{{ negocio.lema }}</p>
         </div>
@@ -81,7 +81,7 @@
             <p class="foot-small">Pedidos y consultas por WhatsApp.<br>Te confirmamos disponibilidad y envío.</p>
         </div>
     </div>
-    <div class="foot-bar"><div class="wrap">© <span id="anio">2026</span> OBSCOOL. Todos los derechos reservados.</div></div>
+    <div class="foot-bar"><div class="wrap">© <span id="anio">2026</span> JOBS Store. Todos los derechos reservados.</div></div>
 </footer>
 
 <!-- Carrito -->
@@ -121,12 +121,12 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<a class="fab-wa" id="fabWa" href="https://wa.me/{{ negocio.whatsapp }}?text={{ '¡Hola OBSCOOL! Quisiera más información.'|urlencode }}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+<a class="fab-wa" id="fabWa" href="https://wa.me/{{ negocio.whatsapp }}?text={{ '¡Hola JOBS Store! Quisiera más información.'|urlencode }}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
     <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><use href="#i-wa"/></svg>
 </a>
 
 <script>
-    window.OBS = {
+    window.JOBS = {
         whatsapp: "{{ negocio.whatsapp }}",
         pse: {{ 'true' if pse_activo else 'false' }},
         productos: {{ todos_productos|tojson }}

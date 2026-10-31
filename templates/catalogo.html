@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_tarjeta.html" import tarjeta %}
-{% block title %}Catálogo | OBSCOOL{% endblock %}
-{% block desc %}Catálogo OBSCOOL: gorras y relojes. Agrega al pedido y finaliza por WhatsApp.{% endblock %}
+{% block title %}Catálogo | JOBS Store{% endblock %}
+{% block desc %}Catálogo JOBS Store: gorras y relojes. Agrega al pedido y finaliza por WhatsApp.{% endblock %}
 
 {% block content %}
 <section class="page-head">
@@ -37,7 +37,7 @@
         <div class="empty" id="sinResultados" hidden>
             <p><b>No encontramos productos con ese filtro.</b></p>
             <p>¿Buscas algo en especial? Pregúntanos por WhatsApp.</p>
-            <a class="btn btn-wa" href="https://wa.me/{{ negocio.whatsapp }}?text={{ '¡Hola OBSCOOL! Estoy buscando un producto que no veo en el catálogo.'|urlencode }}" target="_blank" rel="noopener">Preguntar por WhatsApp</a>
+            <a class="btn btn-wa" href="https://wa.me/{{ negocio.whatsapp }}?text={{ '¡Hola JOBS Store! Estoy buscando un producto que no veo en el catálogo.'|urlencode }}" target="_blank" rel="noopener">Preguntar por WhatsApp</a>
         </div>
     </div>
 </section>

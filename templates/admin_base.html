@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>{% block title %}Administración{% endblock %} | OBSCOOL</title>
+    <title>{% block title %}Administración{% endblock %} | JOBS Store</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -12,9 +12,9 @@
 <body class="adm">
 <header class="adm-top">
     <div class="wrap adm-top-in">
-        <a href="{{ url_for('admin_panel') }}" class="brand" aria-label="Panel OBSCOOL">
+        <a href="{{ url_for('admin_panel') }}" class="brand" aria-label="Panel JOBS Store">
             <img src="{{ url_for('static', filename='img/logo-emblema.png') }}" alt="" width="40" height="36">
-            <span class="brand-txt"><b>OBS</b><i>COOL</i></span>
+            <span class="brand-txt"><b>JOBS</b><i>Store</i></span>
             <span class="adm-tag">Admin</span>
         </a>
         {% if session.get('admin') %}

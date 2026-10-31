@@ -27,7 +27,7 @@ app.config.update(
 # ==========================================
 
 NEGOCIO = {
-    "nombre": "OBSCOOL",
+    "nombre": "JOBS Store",
     "lema": "Creatividad · Innovación · Estilo",
     # Número de WhatsApp con indicativo de país, sin + ni espacios
     "whatsapp": os.environ.get("WHATSAPP_NUMBER", "573227879835"),
@@ -376,7 +376,7 @@ def pago_pse():
         return jsonify(error="Tu pedido está vacío."), 400
 
     total = sum(p["precio"] * c for p, c in lineas)
-    referencia = "OBS-%d-%s" % (int(time.time()), secrets.token_hex(3).upper())
+    referencia = "JOBS-%d-%s" % (int(time.time()), secrets.token_hex(3).upper())
 
     conn = cursor = None
     try:

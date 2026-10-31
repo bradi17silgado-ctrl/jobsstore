@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Resultado del pago | OBSCOOL{% endblock %}
+{% block title %}Resultado del pago | JOBS Store{% endblock %}
 
 {% block content %}
 <section class="page-head">
@@ -33,12 +33,12 @@
         <div class="pago-res">
             {% if referencia %}<span class="ref">Referencia: {{ referencia }}</span>{% endif %}
             <a class="btn btn-primary" href="{{ url_for('catalogo') }}">Volver al catálogo</a>
-            <a class="btn btn-wa" href="https://wa.me/{{ negocio.whatsapp }}{% if referencia %}?text={{ ('¡Hola OBSCOOL! Consulta sobre mi pago PSE, referencia ' ~ referencia)|urlencode }}{% endif %}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+            <a class="btn btn-wa" href="https://wa.me/{{ negocio.whatsapp }}{% if referencia %}?text={{ ('¡Hola JOBS Store! Consulta sobre mi pago PSE, referencia ' ~ referencia)|urlencode }}{% endif %}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
         </div>
     </div>
 </section>
 
 {% if estado == 'APPROVED' %}
-<script>try { localStorage.removeItem("obscool_pedido_v1"); } catch (e) {}</script>
+<script>try { localStorage.removeItem("jobsstore_pedido_v1"); } catch (e) {}</script>
 {% endif %}
 {% endblock %}
