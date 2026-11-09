@@ -12,7 +12,11 @@ import os
 import requests
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "sager-secret-2025")
+# En producción define SECRET_KEY en las variables de entorno de Render.
+# En desarrollo se genera una clave temporal si no existe.
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+if os.environ.get("RENDER") and not os.environ.get("SECRET_KEY"):
+    raise RuntimeError("Falta configurar SECRET_KEY en las variables de entorno de Render.")
 app.config.update(
     MAX_CONTENT_LENGTH=6 * 1024 * 1024,          # tope de cualquier subida
     SESSION_COOKIE_HTTPONLY=True,
@@ -104,12 +108,17 @@ def inyectar_globales():
 # ==========================================
 
 def get_db():
+    requeridas = ("DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME")
+    faltantes = [nombre for nombre in requeridas if not os.environ.get(nombre)]
+    if faltantes:
+        raise RuntimeError("Faltan variables de base de datos: " + ", ".join(faltantes))
     return mysql.connector.connect(
-        host=os.environ.get("DB_HOST", "reseau.proxy.rlwy.net"),
-        port=int(os.environ.get("DB_PORT", 25403)),
-        user=os.environ.get("DB_USER", "root"),
-        password=os.environ.get("DB_PASSWORD", "EaOMUSwcZDBQOhbWCDTnMudaBGwtyrRu"),
-        database=os.environ.get("DB_NAME", "railway")
+        host=os.environ["DB_HOST"],
+        port=int(os.environ["DB_PORT"]),
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
+        connection_timeout=10,
     )
 
 
@@ -170,6 +179,7 @@ def asegurar_esquema():
                 categoria    VARCHAR(40)  NOT NULL,
                 descripcion  VARCHAR(500) NOT NULL DEFAULT '',
                 precio       INT          NOT NULL,
+                stock        INT          NOT NULL DEFAULT 0,
                 imagen       VARCHAR(200) NULL,
                 imagen_data  MEDIUMBLOB   NULL,
                 imagen_tipo  VARCHAR(40)  NULL,
@@ -180,6 +190,10 @@ def asegurar_esquema():
                                           ON UPDATE CURRENT_TIMESTAMP
             ) DEFAULT CHARSET = utf8mb4
         """)
+        # Migración compatible con bases existentes: agrega inventario si falta.
+        cur.execute("SHOW COLUMNS FROM productos LIKE 'stock'")
+        if not cur.fetchone():
+            cur.execute("ALTER TABLE productos ADD COLUMN stock INT NOT NULL DEFAULT 0")
         if not existia:
             for i, p in enumerate(PRODUCTOS_INICIALES):
                 cur.execute(
@@ -209,6 +223,7 @@ def _producto_dict(fila):
         "categoria_label": etiqueta_categoria(fila["categoria"]),
         "descripcion": fila["descripcion"],
         "precio": int(fila["precio"]),
+        "stock": int(fila.get("stock") or 0),
         "imagen_url": imagen_url,
         "tiene_foto": bool(fila["tiene_foto"]),
         "destacado": bool(fila["destacado"]),
@@ -226,7 +241,7 @@ def _productos_respaldo():
     return out
 
 
-SQL_PRODUCTO = ("SELECT id, nombre, categoria, descripcion, precio, imagen, destacado, activo, "
+SQL_PRODUCTO = ("SELECT id, nombre, categoria, descripcion, precio, stock, imagen, destacado, activo, "
                 "(imagen_data IS NOT NULL) AS tiene_foto, UNIX_TIMESTAMP(actualizado) AS version "
                 "FROM productos ")
 
@@ -315,6 +330,14 @@ def catalogo():
     return render_template("catalogo.html", productos=obtener_productos())
 
 
+@app.route("/producto/<pid>")
+def detalle_producto(pid):
+    producto = obtener_producto(pid)
+    if not producto or not producto["activo"]:
+        abort(404)
+    return render_template("producto.html", producto=producto)
+
+
 # ==========================================
 # PAGO CON PSE (Wompi)
 # Variables de entorno necesarias (las entrega Wompi en su panel):
@@ -371,6 +394,8 @@ def pago_pse():
         except (TypeError, ValueError):
             continue
         if pid in catalogo and 0 < cant <= 99:
+            if cant > catalogo[pid]["stock"]:
+                return jsonify(error="No hay existencias suficientes de " + catalogo[pid]["nombre"] + "."), 409
             lineas.append((catalogo[pid], cant))
     if not lineas:
         return jsonify(error="Tu pedido está vacío."), 400
@@ -613,6 +638,15 @@ def leer_formulario():
     elif precio > PRECIO_MAX:
         errores.append("El precio es demasiado alto.")
 
+    stock_texto = f.get("stock", "0").strip()
+    try:
+        stock = int(stock_texto)
+        if stock < 0 or stock > 1000000:
+            raise ValueError
+    except (TypeError, ValueError):
+        stock = 0
+        errores.append("El inventario debe ser un número entero entre 0 y 1.000.000.")
+
     imagen = None
     archivo = request.files.get("foto")
     if archivo and archivo.filename:
@@ -629,6 +663,7 @@ def leer_formulario():
     datos_producto = {
         "nombre": nombre, "categoria": categoria, "descripcion": descripcion,
         "precio": precio,
+        "stock": stock,
         "destacado": 1 if f.get("destacado") else 0,
         "activo": 1 if f.get("activo") else 0,
     }
@@ -650,11 +685,11 @@ def admin_producto_nuevo():
                 cur.execute("SELECT COALESCE(MIN(orden), 0) FROM productos")
                 orden = int(cur.fetchone()[0]) - 10      # los nuevos salen primero
                 cur.execute(
-                    "INSERT INTO productos (id, nombre, categoria, descripcion, precio, "
+                    "INSERT INTO productos (id, nombre, categoria, descripcion, precio, stock, "
                     "imagen_data, imagen_tipo, destacado, activo, orden) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     (pid, datos["nombre"], datos["categoria"], datos["descripcion"], datos["precio"],
-                     imagen[0] if imagen else None, imagen[1] if imagen else None,
+                     datos["stock"], imagen[0] if imagen else None, imagen[1] if imagen else None,
                      datos["destacado"], datos["activo"], orden))
                 conn.commit()
             finally:
@@ -665,7 +700,7 @@ def admin_producto_nuevo():
             flash(e, "error")
         producto = dict(datos, id=None, tiene_foto=False, imagen_url=None)
         return render_template("admin_form.html", producto=producto, categorias=categorias), 400
-    producto = {"id": None, "nombre": "", "categoria": "", "descripcion": "", "precio": "",
+    producto = {"id": None, "nombre": "", "categoria": "", "descripcion": "", "precio": "", "stock": 0,
                 "destacado": False, "activo": True, "tiene_foto": False, "imagen_url": None}
     return render_template("admin_form.html", producto=producto, categorias=categorias)
 
@@ -684,10 +719,10 @@ def admin_producto_editar(pid):
             conn = get_db()
             try:
                 cur = conn.cursor()
-                sql = ("UPDATE productos SET nombre=%s, categoria=%s, descripcion=%s, precio=%s, "
+                sql = ("UPDATE productos SET nombre=%s, categoria=%s, descripcion=%s, precio=%s, stock=%s, "
                        "destacado=%s, activo=%s")
                 params = [datos["nombre"], datos["categoria"], datos["descripcion"], datos["precio"],
-                          datos["destacado"], datos["activo"]]
+                          datos["stock"], datos["destacado"], datos["activo"]]
                 if imagen:
                     sql += ", imagen_data=%s, imagen_tipo=%s"
                     params += [imagen[0], imagen[1]]
@@ -761,8 +796,8 @@ def compras():
     clave = clave_admin()
     if not clave:
         abort(404)
-    if not es_admin() and not iguales(request.args.get("key", ""), clave):
-        abort(404)
+    if not es_admin():
+        return redirect(url_for("admin_login", next=request.path))
 
     conn = None
     cursor = None

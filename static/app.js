@@ -21,7 +21,7 @@
             var raw = JSON.parse(localStorage.getItem(KEY) || "{}");
             Object.keys(raw).forEach(function (id) {
                 var q = parseInt(raw[id], 10);
-                if (MAP[id] && q > 0) cart[id] = Math.min(q, 99);
+                if (MAP[id] && q > 0 && MAP[id].stock > 0) cart[id] = Math.min(q, MAP[id].stock, 99);
             });
         } catch (e) { cart = {}; }
     }
@@ -97,10 +97,15 @@
 
     /* ---------- carrito ---------- */
     function add(id, delta) {
-        if (!MAP[id]) return;
+        if (!MAP[id]) return false;
         var q = (cart[id] || 0) + delta;
-        if (q <= 0) delete cart[id]; else cart[id] = Math.min(q, 99);
+        if (q <= 0) delete cart[id];
+        else if (q > MAP[id].stock) {
+            toast(MAP[id].stock > 0 ? "Solo hay " + MAP[id].stock + " unidades disponibles." : "Este producto está agotado.");
+            return false;
+        } else cart[id] = Math.min(q, 99);
         save(); render();
+        return true;
     }
     function remove(id) { delete cart[id]; save(); render(); }
 
@@ -132,7 +137,9 @@
         // marca tarjetas ya agregadas
         $$(".card").forEach(function (c) { c.classList.toggle("added", !!cart[c.dataset.id]); });
         $$("[data-add]").forEach(function (b) {
+            var p = MAP[b.dataset.add];
             b.textContent = cart[b.dataset.add] ? "✓ En el pedido (" + cart[b.dataset.add] + ")" : "Agregar al pedido";
+            b.disabled = !p || p.stock <= 0 || (cart[b.dataset.add] || 0) >= p.stock;
         });
     }
 
@@ -186,8 +193,7 @@
         var t = e.target.closest("[data-add],[data-consultar],[data-inc],[data-dec],[data-del]");
         if (!t) return;
         if (t.dataset.add) {
-            add(t.dataset.add, 1);
-            toast("Agregado: " + MAP[t.dataset.add].nombre);
+            if (add(t.dataset.add, 1)) toast("Agregado: " + MAP[t.dataset.add].nombre);
             var b = $("#contadorCarrito"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
         }
         else if (t.dataset.consultar) consultar(t.dataset.consultar);

@@ -8,6 +8,7 @@
     </div>
     <a class="btn btn-ghost" href="{{ url_for('admin_panel') }}">← Volver</a>
 </div>
+hola
 
 <form method="post" enctype="multipart/form-data" class="adm-card adm-form">
     <input type="hidden" name="csrf" value="{{ csrf_token() }}">
@@ -28,6 +29,12 @@
         <span>Precio (COP)</span>
         <input type="text" name="precio" value="{{ producto.precio }}" inputmode="numeric" required placeholder="55000">
         <em>Solo números, sin puntos ni decimales.</em>
+    </label>
+
+    <label class="field">
+        <span>Existencias disponibles</span>
+        <input type="number" name="stock" value="{{ producto.stock|default(0) }}" min="0" max="1000000" step="1" required>
+        <em>Unidades disponibles para vender.</em>
     </label>
 
     <label class="field adm-full">
