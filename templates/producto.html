@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ producto.nombre }} | JOBS Store{% endblock %}
+{% block desc %}{{ producto.nombre }}: {{ producto.descripcion }}. Compra en JOBS Store.{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap product-detail">
+    <div class="product-detail-image"><img src="{{ producto.imagen_url }}" alt="{{ producto.nombre }}"></div>
+    <div class="product-detail-info">
+      <a class="more" href="{{ url_for('catalogo') }}">← Volver al catálogo</a>
+      <span class="eyebrow">{{ producto.categoria_label }}</span>
+      <h1>{{ producto.nombre }}</h1>
+      <p class="product-detail-price">{{ producto.precio|cop }} <small>COP</small></p>
+      <p class="product-detail-description">{{ producto.descripcion or 'Consulta más detalles de este producto por WhatsApp.' }}</p>
+      <p class="stock-label {{ 'agotado' if producto.stock <= 0 else '' }}">{{ 'Agotado' if producto.stock <= 0 else 'Disponibles: ' ~ producto.stock }}</p>
+      <div class="product-detail-actions">
+        <button type="button" class="btn btn-primary btn-lg" data-add="{{ producto.id }}" {{ 'disabled' if producto.stock <= 0 }}>Agregar al pedido</button>
+        <button type="button" class="btn btn-wa btn-lg" data-consultar="{{ producto.id }}">Consultar por WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -9,13 +9,19 @@
     <a class="btn btn-primary" href="{{ url_for('admin_producto_nuevo') }}">+ Publicar producto</a>
 </div>
 
+<div class="adm-stats">
+    <div class="adm-stat"><span>Productos registrados</span><strong>{{ productos|length }}</strong></div>
+    <div class="adm-stat"><span>Visibles en la tienda</span><strong>{{ productos|selectattr('activo')|list|length }}</strong></div>
+    <div class="adm-stat"><span>Sin existencias</span><strong>{{ productos|selectattr('stock', 'equalto', 0)|list|length }}</strong></div>
+</div>
+
 {% if error_bd %}
 <p class="adm-msg adm-error">{{ error_bd }} Revisa las variables DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME.</p>
 {% else %}
 <div class="table-wrap">
     <table class="tabla adm-tabla">
         <thead>
-            <tr><th>Foto</th><th>Producto</th><th>Categoría</th><th class="num">Precio</th><th>Estado</th><th>Acciones</th></tr>
+            <tr><th>Foto</th><th>Producto</th><th>Categoría</th><th class="num">Precio</th><th class="num">Stock</th><th>Estado</th><th>Acciones</th></tr>
         </thead>
         <tbody>
         {% for p in productos %}
@@ -23,7 +29,7 @@
                 <td data-l="Foto"><img class="adm-thumb" src="{{ p.imagen_url }}" alt="" width="56" height="56"></td>
                 <td data-l="Producto"><b>{{ p.nombre }}</b>{% if p.destacado %} <span class="adm-star" title="Aparece en el inicio">★ destacado</span>{% endif %}</td>
                 <td data-l="Categoría">{{ p.categoria_label }}</td>
-                <td data-l="Precio" class="num"><b>{{ p.precio|cop }}</b></td>
+                <td data-l="Precio" class="num"><b>{{ p.precio|cop }}</b></td>\n                <td data-l="Stock" class="num"><b>{{ p.stock }}</b></td>
                 <td data-l="Estado">{% if p.activo %}<span class="badge">Visible</span>{% else %}<span class="badge badge-off">Oculto</span>{% endif %}</td>
                 <td data-l="Acciones" class="adm-acciones">
                     <a class="btn btn-sm btn-ghost" href="{{ url_for('admin_producto_editar', pid=p.id) }}">Editar</a>
@@ -38,7 +44,7 @@
                 </td>
             </tr>
         {% else %}
-            <tr><td colspan="6" class="vacio">Aún no hay productos. Publica el primero.</td></tr>
+            <tr><td colspan="7" class="vacio">Aún no hay productos. Publica el primero.</td></tr>
         {% endfor %}
         </tbody>
     </table>
