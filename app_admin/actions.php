@@ -1,4 +1,3 @@
-
 <?php
 if (!defined('JOBS_APP')) {
     http_response_code(403);
