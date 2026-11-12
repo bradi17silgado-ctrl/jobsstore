@@ -1,1 +1,6 @@
-Require all denied
+DirectoryIndex index.php
+Options -Indexes
+
+<FilesMatch "^(index|login|dashboard|actions)\.php$">
+    Require all granted
+</FilesMatch>
