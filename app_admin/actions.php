@@ -77,5 +77,57 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
         go('/admin');
     }
 }
+// Ocultar o volver a publicar un producto sin borrar su información.
+if ($path === '/admin/producto/visibilidad' && $method === 'POST') {
+    require_admin();
+    verify_csrf();
+    $id=(string)($_POST['id']??'');
+    $visible=(string)($_POST['visible']??'');
+    if (!preg_match('/^[a-zA-Z0-9_-]{1,32}$/',$id) || !in_array($visible,['0','1'],true)) {
+        message('Solicitud de visibilidad inválida.'); go('/admin');
+    }
+    try {
+        $d=db();
+        if (!$d) throw new RuntimeException('No hay conexión a Railway.');
+        initdb($d);
+        $q=$d->prepare('UPDATE jobs_productos SET visible=? WHERE id=?');
+        $q->execute([(int)$visible,$id]);
+        message($q->rowCount()?'Visibilidad actualizada.':'No se encontró el producto o ya tenía ese estado.');
+    } catch (Throwable $e) {
+        error_log('Visibilidad producto: '.$e->getMessage());
+        message('No se pudo actualizar la visibilidad.');
+    }
+    go('/admin');
+}
+// Eliminación definitiva: la imagen y las reseñas asociadas se eliminan en la misma transacción.
+// Los pedidos históricos conservan sus datos en items_json.
+if ($path === '/admin/producto/eliminar' && $method === 'POST') {
+    require_admin();
+    verify_csrf();
+    $id=(string)($_POST['id']??'');
+    $confirm=(string)($_POST['confirmar']??'');
+    if (!preg_match('/^[a-zA-Z0-9_-]{1,32}$/',$id) || $confirm!=='ELIMINAR') {
+        message('Eliminación no confirmada.'); go('/admin');
+    }
+    $d=db();
+    if (!$d) { message('No hay conexión a Railway.'); go('/admin'); }
+    try {
+        initdb($d);
+        $d->beginTransaction();
+        $q=$d->prepare('SELECT id FROM jobs_productos WHERE id=? FOR UPDATE');
+        $q->execute([$id]);
+        if (!$q->fetchColumn()) throw new RuntimeException('El producto ya no existe.');
+        $q=$d->prepare('DELETE FROM jobs_imagenes WHERE producto_id=?'); $q->execute([$id]);
+        $q=$d->prepare('DELETE FROM jobs_resenas WHERE producto_id=?'); $q->execute([$id]);
+        $q=$d->prepare('DELETE FROM jobs_productos WHERE id=?'); $q->execute([$id]);
+        $d->commit();
+        message('Producto eliminado definitivamente.');
+    } catch (Throwable $e) {
+        if ($d->inTransaction()) $d->rollBack();
+        error_log('Eliminar producto: '.$e->getMessage());
+        message('No se pudo eliminar el producto.');
+    }
+    go('/admin');
+}
 if($path==='/admin/pedido/estado'&&$method==='POST'){require_admin();verify_csrf();$estado=(string)($_POST['estado']??'');if(in_array($estado,['Pendiente','Confirmado','Enviado','Entregado','Cancelado'],true)&&db()){$q=db()->prepare('UPDATE jobs_pedidos SET estado=? WHERE id=?');$q->execute([$estado,(int)($_POST['id']??0)]);}go('/admin');}
 if($path==='/admin/resena/aprobar'&&$method==='POST'){require_admin();verify_csrf();if(db()){$q=db()->prepare('UPDATE jobs_resenas SET aprobada=? WHERE id=?');$q->execute([(int)($_POST['aprobar']??0),(int)($_POST['id']??0)]);}go('/admin');}

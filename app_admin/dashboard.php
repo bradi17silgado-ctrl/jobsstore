@@ -23,7 +23,21 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
     <div class="jobs-section-heading"><div><h2>Inventario</h2><p>Controla los precios, las existencias y las fotografías.</p></div><a class="btn btn-primary" href="/admin#producto-form">+ Agregar producto</a></div>
     <div class="jobs-table-scroll"><table class="jobs-table jobs-inventory"><thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
     <?php foreach ($items as $item): ?>
-    <tr><td><div class="jobs-product-cell"><img src="<?=h($item['imagen_url'])?>" alt="" loading="lazy"><div><strong><?=h($item['nombre'])?></strong><small><?=h(ucfirst($item['categoria']))?></small></div></div></td><td><strong><?=money($item['precio'])?></strong></td><td><?= (int)$item['stock'] ?></td><td><span class="jobs-status <?=((int)$item['stock']===0?'jobs-out':'jobs-in')?>"><?=((int)$item['stock']===0?'Agotado':'Disponible')?></span></td><td><a class="jobs-edit-link" href="/admin?editar=<?=rawurlencode($item['id'])?>#producto-form">Editar</a></td></tr>
+    <tr><td><div class="jobs-product-cell"><img src="<?=h($item['imagen_url'])?>" alt="" loading="lazy"><div><strong><?=h($item['nombre'])?></strong><small><?=h(ucfirst($item['categoria']))?></small></div></div></td><td><strong><?=money($item['precio'])?></strong></td><td><?= (int)$item['stock'] ?></td><td><span class="jobs-status <?=(empty($item['visible'])?'jobs-hidden':((int)$item['stock']===0?'jobs-out':'jobs-in'))?>"><?=(empty($item['visible'])?'Oculto':((int)$item['stock']===0?'Agotado':'Disponible'))?></span></td><td><div class="jobs-row-actions">
+      <a class="jobs-edit-link" href="/admin?editar=<?=rawurlencode($item['id'])?>#producto-form">Editar</a>
+      <form method="post" action="/admin/producto/visibilidad">
+        <input type="hidden" name="csrf" value="<?=h(csrf())?>">
+        <input type="hidden" name="id" value="<?=h($item['id'])?>">
+        <input type="hidden" name="visible" value="<?=!empty($item['visible'])?'0':'1'?>">
+        <button type="submit" class="jobs-action-button jobs-hide-button" <?=!$d?'disabled':''?>><?=!empty($item['visible'])?'Ocultar':'Publicar'?></button>
+      </form>
+      <form method="post" action="/admin/producto/eliminar" onsubmit="return confirm('¿Eliminar definitivamente este producto y su imagen? Esta acción no se puede deshacer.');">
+        <input type="hidden" name="csrf" value="<?=h(csrf())?>">
+        <input type="hidden" name="id" value="<?=h($item['id'])?>">
+        <input type="hidden" name="confirmar" value="ELIMINAR">
+        <button type="submit" class="jobs-action-button jobs-delete-button" <?=!$d?'disabled':''?> aria-label="Eliminar <?=h($item['nombre'])?>">Eliminar</button>
+      </form>
+    </div></td></tr>
     <?php endforeach; ?>
     </tbody></table></div>
   </div>

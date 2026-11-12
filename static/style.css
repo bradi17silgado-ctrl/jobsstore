@@ -943,3 +943,14 @@ body { background:#fff; }
 .jobs-preview{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:7px;max-width:100%}.jobs-preview[hidden]{display:none}.jobs-preview img{width:210px;height:210px;object-fit:contain;border-radius:12px;background:white;border:1px solid #e2e8f0}.jobs-preview span{max-width:260px;overflow-wrap:anywhere;font-size:12px;color:#63758b}
 .jobs-options{display:flex;flex-wrap:wrap;gap:24px}.jobs-options label{display:flex!important;align-items:center;gap:9px}.jobs-options input{width:auto!important;accent-color:#1c4e83}.jobs-save{min-height:48px;max-width:300px}.jobs-secondary{background:#eef2f6!important;color:#192b41!important;border:1px solid #dfe5ed!important}.jobs-review{border-bottom:1px solid #e6eaf0;padding:12px 0}
 @media(max-width:650px){.jobs-stats{grid-template-columns:1fr}.jobs-form-grid{grid-template-columns:1fr}.jobs-admin-panel{padding:17px!important}.jobs-save{max-width:none;width:100%}.jobs-upload{padding:18px}}
+
+/* Acciones del inventario: editar, ocultar/publicar y eliminar */
+.jobs-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.jobs-row-actions form{display:inline-flex;margin:0}
+.jobs-action-button{font:inherit;font-size:13px;font-weight:700;cursor:pointer;border-radius:8px;padding:8px 11px;border:1px solid #cbd5e1;background:#f1f5f9;color:#26364c;white-space:nowrap}
+.jobs-action-button:hover{background:#e2e8f0}
+.jobs-delete-button{background:#fff1f2;border-color:#fecdd3;color:#be123c}
+.jobs-delete-button:hover{background:#ffe4e6}
+.jobs-action-button:disabled{opacity:.45;cursor:not-allowed}
+.jobs-hidden{background:#f1f5f9;color:#475569}
+.jobs-inventory{min-width:840px}

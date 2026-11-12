@@ -12,7 +12,18 @@ $db->exec('CREATE TABLE IF NOT EXISTS jobs_productos (id VARCHAR(32) PRIMARY KEY
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_imagenes (producto_id VARCHAR(32) PRIMARY KEY, mime VARCHAR(32) NOT NULL, contenido MEDIUMBLOB NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_pedidos (id BIGINT AUTO_INCREMENT PRIMARY KEY,referencia VARCHAR(32) NOT NULL UNIQUE,cliente VARCHAR(120) NOT NULL,telefono VARCHAR(35) NOT NULL,ciudad VARCHAR(180),total DECIMAL(12,2) NOT NULL,estado VARCHAR(35) NOT NULL DEFAULT \'Pendiente\',items_json JSON NOT NULL,creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_resenas (id BIGINT AUTO_INCREMENT PRIMARY KEY,producto_id VARCHAR(32) NOT NULL,cliente VARCHAR(100) NOT NULL,calificacion TINYINT NOT NULL,comentario TEXT NOT NULL,aprobada TINYINT NOT NULL DEFAULT 0,creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-$cnt=(int)$db->query('SELECT COUNT(*) FROM jobs_productos')->fetchColumn();if(!$cnt){$stmt=$db->prepare('INSERT INTO jobs_productos (id,nombre,categoria,descripcion,precio,imagen,stock,destacado) VALUES (?,?,?,?,?,?,?,?)');foreach(json_decode(file_get_contents(__DIR__.'/data/productos.json'),true) as $p)$stmt->execute([$p['id'],$p['nombre'],$p['categoria'],$p['descripcion'],$p['precio'],$p['imagen'],$p['stock'],(int)$p['destacado']]);}}
+$db->exec('CREATE TABLE IF NOT EXISTS jobs_config (clave VARCHAR(60) PRIMARY KEY, valor VARCHAR(60) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$seeded=$db->query("SELECT valor FROM jobs_config WHERE clave='productos_inicializados'")->fetchColumn();
+if ($seeded===false) {
+    $cnt=(int)$db->query('SELECT COUNT(*) FROM jobs_productos')->fetchColumn();
+    if (!$cnt) {
+        $stmt=$db->prepare('INSERT INTO jobs_productos (id,nombre,categoria,descripcion,precio,imagen,stock,destacado) VALUES (?,?,?,?,?,?,?,?)');
+        foreach (json_decode(file_get_contents(__DIR__.'/data/productos.json'),true) ?: [] as $p) {
+            $stmt->execute([$p['id'],$p['nombre'],$p['categoria'],$p['descripcion'],$p['precio'],$p['imagen'],$p['stock'],(int)$p['destacado']]);
+        }
+    }
+    $db->exec("INSERT INTO jobs_config(clave,valor) VALUES('productos_inicializados','1')");
+}}
 function products(bool $all=false):array{$d=db();if($d){try{initdb($d);$q=$d->query('SELECT * FROM jobs_productos '.($all?'':'WHERE visible=1 ').'ORDER BY categoria,nombre');$rows=$q->fetchAll();foreach($rows as &$p){$p['precio']=(float)$p['precio'];$p['stock']=(int)$p['stock'];$p['imagen_url']=str_starts_with((string)$p['imagen'],'db:')?'/media/producto/'.rawurlencode($p['id']):'/static/img/'.ltrim($p['imagen'],'/');}return $rows;}catch(Throwable $e){error_log($e->getMessage());}}$rows=json_decode(file_get_contents(__DIR__.'/data/productos.json'),true)?:[];foreach($rows as &$p)$p['imagen_url']='/static/img/'.$p['imagen'];return $all?$rows:array_values(array_filter($rows,static fn($p)=>!isset($p['visible'])||$p['visible']));}
 function csrf():string {return $_SESSION['csrf']??=bin2hex(random_bytes(24));}
 function verify_csrf():void{if(!hash_equals(csrf(),(string)($_SERVER['HTTP_X_CSRF_TOKEN']??$_POST['csrf']??''))){http_response_code(403);exit('Solicitud inválida (CSRF).');}}
@@ -45,7 +56,7 @@ if ($path === '/admin' && !admin()) {
 }
 // Responder con 404 antes de enviar la plantilla HTML.
 $isPublicPage = in_array($path, ['/', '/inicio', '/catalogo', '/seguimiento', '/informacion', '/admin', '/admin/login'], true);
-$isAction = $method === 'POST' && in_array($path, ['/pedido/crear','/resenas/crear','/admin/login','/admin/salir','/admin/producto/guardar','/admin/pedido/estado','/admin/resena/aprobar'], true);
+$isAction = $method === 'POST' && in_array($path, ['/pedido/crear','/resenas/crear','/admin/login','/admin/salir','/admin/producto/guardar','/admin/producto/eliminar','/admin/producto/visibilidad','/admin/pedido/estado','/admin/resena/aprobar'], true);
 $isProductPage = preg_match('~^/producto/([a-zA-Z0-9_-]+)$~', $path, $productMatch) && isset($byId[$productMatch[1]]);
 if (!$isPublicPage && !$isProductPage && !$isAction) {
     http_response_code(404);
