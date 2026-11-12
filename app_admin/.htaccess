@@ -1,1 +1,39 @@
-Require all denied
+
+Options -Indexes
+DirectoryIndex index.php
+
+RewriteEngine On
+
+# =====================================
+# RUTAS ADMINISTRATIVAS JOBS STORE
+# =====================================
+
+RewriteRule ^admin/?$ index.php [END]
+
+RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar)/?$ index.php [END]
+
+# Redirigir accesos antiguos
+RewriteRule ^admin/(index|login)\.php$ /admin/login [R=302,END]
+
+# =====================================
+# PROTEGER ARCHIVOS INTERNOS
+# =====================================
+
+RewriteRule ^(data|views|app_admin|admin|\.git|\.vscode)(/|$) - [F,END,NC]
+
+RewriteRule (^|/)\.(?!well-known/) - [F,END]
+
+RewriteRule ^(Dockerfile|router\.php|README.*|MIGRACION.*|DESPLIEGUE.*|.*\.md)$ - [F,END,NC]
+
+# =====================================
+# ARCHIVOS ESTÁTICOS
+# =====================================
+
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [END]
+
+# =====================================
+# CONTROLADOR PRINCIPAL PHP
+# =====================================
+
+RewriteRule ^ index.php [END]
