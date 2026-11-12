@@ -9,17 +9,35 @@ function money($v):string{return '$'.number_format((float)$v,0,',','.');}
 function db():?PDO {static $pdo=null,$attempt=false;if($attempt)return $pdo;$attempt=true;try{$host=envv('DB_HOST');if(!$host)return null;$pdo=new PDO('mysql:host='.$host.';port='.envv('DB_PORT','3306').';dbname='.envv('DB_NAME').';charset=utf8mb4',envv('DB_USER'),envv('DB_PASSWORD'),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,PDO::ATTR_EMULATE_PREPARES=>false]);return $pdo;}catch(Throwable $e){error_log('Database unavailable: '.$e->getMessage());return null;}}
 function initdb(PDO $db):void{
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_productos (id VARCHAR(32) PRIMARY KEY,nombre VARCHAR(160) NOT NULL,categoria VARCHAR(60) NOT NULL,descripcion TEXT,precio DECIMAL(12,2) NOT NULL,imagen VARCHAR(255) NOT NULL,stock INT NOT NULL DEFAULT 0,destacado TINYINT NOT NULL DEFAULT 0,visible TINYINT NOT NULL DEFAULT 1) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$db->exec('CREATE TABLE IF NOT EXISTS jobs_imagenes (producto_id VARCHAR(32) PRIMARY KEY, mime VARCHAR(32) NOT NULL, contenido MEDIUMBLOB NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_pedidos (id BIGINT AUTO_INCREMENT PRIMARY KEY,referencia VARCHAR(32) NOT NULL UNIQUE,cliente VARCHAR(120) NOT NULL,telefono VARCHAR(35) NOT NULL,ciudad VARCHAR(180),total DECIMAL(12,2) NOT NULL,estado VARCHAR(35) NOT NULL DEFAULT \'Pendiente\',items_json JSON NOT NULL,creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_resenas (id BIGINT AUTO_INCREMENT PRIMARY KEY,producto_id VARCHAR(32) NOT NULL,cliente VARCHAR(100) NOT NULL,calificacion TINYINT NOT NULL,comentario TEXT NOT NULL,aprobada TINYINT NOT NULL DEFAULT 0,creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $cnt=(int)$db->query('SELECT COUNT(*) FROM jobs_productos')->fetchColumn();if(!$cnt){$stmt=$db->prepare('INSERT INTO jobs_productos (id,nombre,categoria,descripcion,precio,imagen,stock,destacado) VALUES (?,?,?,?,?,?,?,?)');foreach(json_decode(file_get_contents(__DIR__.'/data/productos.json'),true) as $p)$stmt->execute([$p['id'],$p['nombre'],$p['categoria'],$p['descripcion'],$p['precio'],$p['imagen'],$p['stock'],(int)$p['destacado']]);}}
-function products(bool $all=false):array{$d=db();if($d){try{initdb($d);$q=$d->query('SELECT * FROM jobs_productos '.($all?'':'WHERE visible=1 ').'ORDER BY categoria,nombre');$rows=$q->fetchAll();foreach($rows as &$p){$p['precio']=(float)$p['precio'];$p['stock']=(int)$p['stock'];$p['imagen_url']='/static/img/'.ltrim($p['imagen'],'/');}return $rows;}catch(Throwable $e){error_log($e->getMessage());}}$rows=json_decode(file_get_contents(__DIR__.'/data/productos.json'),true)?:[];foreach($rows as &$p)$p['imagen_url']='/static/img/'.$p['imagen'];return $all?$rows:array_values(array_filter($rows,static fn($p)=>!isset($p['visible'])||$p['visible']));}
+function products(bool $all=false):array{$d=db();if($d){try{initdb($d);$q=$d->query('SELECT * FROM jobs_productos '.($all?'':'WHERE visible=1 ').'ORDER BY categoria,nombre');$rows=$q->fetchAll();foreach($rows as &$p){$p['precio']=(float)$p['precio'];$p['stock']=(int)$p['stock'];$p['imagen_url']=str_starts_with((string)$p['imagen'],'db:')?'/media/producto/'.rawurlencode($p['id']):'/static/img/'.ltrim($p['imagen'],'/');}return $rows;}catch(Throwable $e){error_log($e->getMessage());}}$rows=json_decode(file_get_contents(__DIR__.'/data/productos.json'),true)?:[];foreach($rows as &$p)$p['imagen_url']='/static/img/'.$p['imagen'];return $all?$rows:array_values(array_filter($rows,static fn($p)=>!isset($p['visible'])||$p['visible']));}
 function csrf():string {return $_SESSION['csrf']??=bin2hex(random_bytes(24));}
 function verify_csrf():void{if(!hash_equals(csrf(),(string)($_SERVER['HTTP_X_CSRF_TOKEN']??$_POST['csrf']??''))){http_response_code(403);exit('Solicitud inválida (CSRF).');}}
 function admin():bool{return !empty($_SESSION['admin']);}
 function go(string $path):never{header('Location: '.$path, true,303);exit;}
 function require_admin():void{if(!admin())go('/admin/login');}
 function message(string $s):void{$_SESSION['message']=$s;}
-$path=parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH)?:'/'; if($path!=='/')$path=rtrim($path,'/');$method=$_SERVER['REQUEST_METHOD'];$all=products();$byId=[];foreach($all as $p)$byId[$p['id']]=$p;
+$path=parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH)?: '/'; if($path!=='/')$path=rtrim($path,'/');$method=$_SERVER['REQUEST_METHOD'];
+// Imágenes persistentes almacenadas en MySQL (sin depender del disco efímero de Render).
+if ($method === 'GET' && preg_match('~^/media/producto/([a-zA-Z0-9_-]{1,32})$~', $path, $mediaMatch)) {
+    $d=db();
+    if (!$d) { http_response_code(503); exit; }
+    try {
+        initdb($d);
+        $q=$d->prepare('SELECT i.mime,i.contenido FROM jobs_imagenes i INNER JOIN jobs_productos p ON p.id=i.producto_id WHERE i.producto_id=? AND (p.visible=1 OR ?=1)');
+        $q->execute([$mediaMatch[1], admin()?1:0]);
+        $img=$q->fetch();
+        if (!$img) { http_response_code(404); exit; }
+        header('Content-Type: '.$img['mime']);
+        header('Cache-Control: public, max-age=300');
+        header('X-Content-Type-Options: nosniff');
+        echo $img['contenido']; exit;
+    } catch (Throwable $e) { error_log('Image delivery: '.$e->getMessage()); http_response_code(500); exit; }
+}
+$all=products();$byId=[];foreach($all as $p)$byId[$p['id']]=$p;
 require_once __DIR__.'/app_admin/actions.php';
 // Las redirecciones deben ejecutarse antes de generar cualquier HTML.
 if ($path === '/admin' && !admin()) {

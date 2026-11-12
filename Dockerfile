@@ -4,6 +4,8 @@ FROM php:8.3-apache
 # Extensiones para MySQL
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
+RUN printf 'upload_max_filesize=4M\npost_max_size=5M\nmax_file_uploads=5\n' > /usr/local/etc/php/conf.d/jobs-uploads.ini
+
 # Activar módulos de Apache
 RUN a2enmod rewrite headers
 
