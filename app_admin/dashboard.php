@@ -65,7 +65,52 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
       <button type="submit" class="btn btn-primary jobs-save" <?=!$d?'disabled':''?>>Guardar producto</button>
     </form>
   </div>
-  <div class="jobs-panel jobs-admin-panel"><h2>Pedidos recibidos</h2><div class="jobs-table-scroll"><table class="jobs-table"><thead><tr><th>Referencia</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Actualizar</th></tr></thead><tbody><?php if($d) foreach($d->query('SELECT * FROM jobs_pedidos ORDER BY id DESC LIMIT 100') as $r): ?><tr><td><?=h($r['referencia'])?></td><td><?=h($r['cliente'])?><br><?=h($r['telefono'])?><br><small><?=h($r['items_json'])?></small></td><td><?=money($r['total'])?></td><td><?=h($r['estado'])?></td><td><form method="post" action="/admin/pedido/estado"><input type="hidden" name="csrf" value="<?=h(csrf())?>"><input type="hidden" name="id" value="<?=h($r['id'])?>"><select name="estado"><?php foreach(['Pendiente','Confirmado','Enviado','Entregado','Cancelado'] as $estado): ?><option <?=($r['estado']===$estado?'selected':'')?>><?=h($estado)?></option><?php endforeach; ?></select><button class="btn jobs-secondary">Guardar</button></form></td></tr><?php endforeach; ?></tbody></table></div></div>
+  <div class="jobs-panel jobs-admin-panel" id="pedidos-recibidos">
+    <div class="jobs-section-heading"><div><h2>Pedidos recibidos</h2><p>Haz clic en el nombre del cliente para consultar los detalles del pedido.</p></div></div>
+    <div class="jobs-table-scroll"><table class="jobs-table jobs-orders-table"><thead><tr><th>Referencia</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Actualizar</th></tr></thead><tbody>
+    <?php if($d) foreach($d->query('SELECT * FROM jobs_pedidos ORDER BY id DESC LIMIT 100') as $r):
+      $productos=json_decode((string)$r['items_json'],true);
+      if(!is_array($productos)) $productos=[];
+      $modalId='detalle-pedido-'.(int)$r['id'];
+    ?>
+      <tr>
+        <td><?=h($r['referencia'])?></td>
+        <td><button class="jobs-client-link" type="button" data-order-detail="<?=h($modalId)?>" aria-label="Ver información del pedido de <?=h($r['cliente'])?>"><?=h($r['cliente'])?></button><br><span class="jobs-order-phone"><?=h($r['telefono'])?></span></td>
+        <td><?=money($r['total'])?></td>
+        <td><?=h($r['estado'])?></td>
+        <td><form method="post" action="/admin/pedido/estado"><input type="hidden" name="csrf" value="<?=h(csrf())?>"><input type="hidden" name="id" value="<?=h($r['id'])?>"><select name="estado"><?php foreach(['Pendiente','Confirmado','Enviado','Entregado','Cancelado'] as $estado): ?><option <?=($r['estado']===$estado?'selected':'')?>><?=h($estado)?></option><?php endforeach; ?></select><button class="btn jobs-secondary">Guardar</button></form></td>
+      </tr>
+      <template id="<?=h($modalId)?>">
+        <div class="jobs-detail-top"><span class="jobs-detail-reference"><?=h($r['referencia'])?></span><span class="jobs-status jobs-in"><?=h($r['estado'])?></span></div>
+        <dl class="jobs-detail-data">
+          <div><dt>Nombre completo</dt><dd><?=h($r['cliente'])?></dd></div>
+          <div><dt>Teléfono</dt><dd><?=h($r['telefono'])?></dd></div>
+          <div><dt>Ciudad</dt><dd><?=h($r['ciudad'] ?: 'No registrada')?></dd></div>
+          <div><dt>Dirección</dt><dd><?=h($r['direccion'] ?: 'No registrada (pedido anterior o sin dirección)')?></dd></div>
+          <div><dt>Fecha de pedido</dt><dd><?=h($r['creado'] ?? 'No disponible')?></dd></div>
+          <div><dt>Estado</dt><dd><?=h($r['estado'])?></dd></div>
+        </dl>
+        <h3>Productos solicitados</h3>
+        <div class="jobs-detail-products">
+          <?php foreach($productos as $p):
+            if(!is_array($p)) continue;
+            $cantidad=(int)($p['cantidad']??0);$precio=(float)($p['precio']??0);
+          ?>
+          <div class="jobs-detail-product"><span><?=h($p['nombre']??'Producto')?> <small>× <?= $cantidad ?></small></span><strong><?=money($precio*$cantidad)?></strong></div>
+          <?php endforeach; ?>
+          <?php if(!$productos): ?><p>No se pudo obtener el listado de productos.</p><?php endif; ?>
+        </div>
+        <div class="jobs-detail-total"><strong>Total</strong><strong><?=money($r['total'])?></strong></div>
+      </template>
+    <?php endforeach; ?>
+    </tbody></table></div>
+  </div>
+  <dialog class="jobs-order-modal" id="jobsOrderModal" aria-labelledby="jobsOrderModalTitle">
+    <div class="jobs-order-modal-head"><h2 id="jobsOrderModalTitle">Información del pedido</h2><button type="button" class="jobs-order-modal-close" data-close-order aria-label="Cerrar detalles">✕</button></div>
+    <div id="jobsOrderModalContent"></div>
+    <div class="jobs-order-modal-foot"><button type="button" class="btn btn-primary" data-close-order>Cerrar</button></div>
+  </dialog>
   <div class="jobs-panel jobs-admin-panel"><h2>Reseñas pendientes</h2><?php if($d) foreach($d->query('SELECT * FROM jobs_resenas WHERE aprobada=0 ORDER BY id DESC LIMIT 30') as $r): ?><div class="jobs-review"><p><strong><?=h($r['cliente'])?></strong> — <?=h($r['comentario'])?></p><form method="post" action="/admin/resena/aprobar"><input type="hidden" name="csrf" value="<?=h(csrf())?>"><input type="hidden" name="id" value="<?=h($r['id'])?>"><input type="hidden" name="aprobar" value="1"><button class="btn jobs-secondary">Aprobar</button></form></div><?php endforeach; ?></div>
 </section>
 <script src="/static/admin-productos.js" defer></script>
+<script src="/static/admin-pedidos.js" defer></script>
