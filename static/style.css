@@ -1503,3 +1503,32 @@ footer {
     margin-top: auto;
     flex-shrink: 0;
 }
+
+
+/* Confirmación de pedido integrada en JOBS Store */
+.confirm-page{display:flex;justify-content:center;align-items:flex-start;padding-top:48px!important;padding-bottom:72px!important;}
+.confirm-card{width:min(100%,660px);padding:clamp(22px,4vw,44px);background:#fff;border:1px solid #e1e7ee;border-radius:22px;box-shadow:0 16px 52px rgba(15,31,49,.09);text-align:center;color:#14283f;font-family:Arial,Helvetica,sans-serif;}
+.confirm-icon{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:#e5f6ed;color:#16824a;font-size:42px;font-weight:700;margin:0 auto 18px;}
+.confirm-icon-muted{background:#f1f5f9;color:#64748b;}
+.confirm-eyebrow{letter-spacing:.13em;color:#63758a;font-size:11px;font-weight:700;margin-bottom:10px;}
+.confirm-card h1{font:700 clamp(27px,5vw,36px)/1.2 Arial,Helvetica,sans-serif;color:#14283f;margin:0 0 12px;}
+.confirm-subtitle{max-width:490px;margin:0 auto 23px;color:#566477;font-size:15px;line-height:1.65;}
+.confirm-reference{display:flex;flex-direction:column;align-items:center;gap:9px;padding:22px 12px;background:#f3f6fa;border:1px dashed #cbd5e1;border-radius:14px;}
+.confirm-reference span{color:#64748b;font-size:11px;font-weight:700;letter-spacing:.1em;}
+.confirm-reference strong{font-size:clamp(19px,5vw,25px);letter-spacing:.04em;overflow-wrap:anywhere;}
+.confirm-copy{border:1px solid #ccd7e4;border-radius:8px;background:#fff;color:#183550;padding:9px 14px;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer;}
+.confirm-copy:hover{background:#e9f0f7;}
+.confirm-reference small{min-height:14px;color:#166534;}
+.confirm-summary{text-align:left;margin:27px 0 18px;}
+.confirm-summary h2{font:700 18px Arial,Helvetica,sans-serif;color:#14283f;margin:0 0 14px;}
+.confirm-line,.confirm-total{display:flex;justify-content:space-between;gap:14px;align-items:baseline;padding:12px 0;border-bottom:1px solid #e6ebf0;font-size:14px;}
+.confirm-line span{min-width:0;overflow-wrap:anywhere;}
+.confirm-line small{color:#64748b;}
+.confirm-line strong,.confirm-total strong{white-space:nowrap;}
+.confirm-total{font-size:19px;font-weight:700;border-bottom:none;color:#14283f;}
+.confirm-note{color:#566477;background:#f9fafb;text-align:left;border-left:3px solid #b28b56;border-radius:4px;padding:12px;font-size:13px;line-height:1.5;}
+.confirm-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:25px;}
+.confirm-actions .btn{min-height:46px;min-width:175px;font-family:Arial,Helvetica,sans-serif;white-space:normal;}
+.confirm-secondary{background:#fff!important;color:#14283f!important;border:1px solid #cbd5e1!important;}
+.confirm-secondary:hover{background:#edf2f7!important;}
+@media(max-width:540px){.confirm-page{padding:20px 12px 48px!important;}.confirm-actions{flex-direction:column;}.confirm-actions .btn{width:100%;}.confirm-line{font-size:13px;}}
