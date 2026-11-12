@@ -2044,3 +2044,111 @@ h1,h2,h3,h4,h5,h6,.brand-txt,.hero h1,.hero-title { font-family: Arial, Helvetic
 .nav a { color:#192334 !important; text-decoration:none !important; }
 .nav a:focus-visible, .burger:focus-visible, #closeMenu:focus-visible { outline:3px solid #3687cc;outline-offset:2px; }
 @media(max-width:760px){.nav{top:0!important;max-height:100dvh!important;z-index:1002!important}.brand-txt{font-size:clamp(15px,4vw,18px)!important}.topbar-actions{gap:6px!important}.burger,.cart-btn{flex-shrink:0}}
+
+
+/* ==============================================================
+   JOBS STORE | IDENTIDAD VISUAL PROFESIONAL 2026
+   Azul noche + azul petróleo + blanco hielo + acento champán.
+   Variables compartidas por escaparate y administración.
+   ============================================================== */
+:root {
+  --navy:#14283f;
+  --navy-2:#0b1727;
+  --blue:#28617d;
+  --cyan:#4a94a7;
+  --orange:#b28b56;
+  --ink:#172639;
+  --muted:#617184;
+  --line:#e2e8ef;
+  --bg:#ffffff;
+  --bg-alt:#f4f7fa;
+  --radius:16px;
+  --shadow:0 8px 28px rgba(16,40,62,.08);
+  --shadow-lg:0 18px 50px rgba(16,40,62,.13);
+  --font-h:Arial,Helvetica,sans-serif;
+  --font-b:Arial,Helvetica,sans-serif;
+}
+html { color-scheme:light; }
+body { background:#f8fafc; color:var(--ink); }
+h1,h2,h3,h4,h5,h6 { color:var(--navy); }
+:focus-visible { outline-color:var(--cyan); }
+::selection { background:#c7dde8; color:#11243a; }
+a { text-underline-offset:3px; }
+a:hover { color:var(--blue); }
+.topbar { background:rgba(255,255,255,.97); border-bottom:1px solid var(--line); box-shadow:0 2px 15px rgba(20,40,63,.04); }
+.brand, .brand-txt, .brand-txt b { color:var(--navy); }
+.brand-txt i { color:var(--blue); }
+.cart-btn, .btn-primary { background:var(--navy) !important; color:white !important; border-color:var(--navy); }
+.cart-btn:hover, .btn-primary:hover { background:var(--blue) !important; border-color:var(--blue); box-shadow:0 5px 16px rgba(40,97,125,.2); }
+.cart-count, #cartCount { background:var(--orange); color:#fff; }
+.burger, #closeMenu { background:#eef3f7 !important; color:var(--navy) !important; border:1px solid #dde6ee; }
+.burger:hover, #closeMenu:hover { background:#ddeaf2 !important; }
+.nav { background:#fff !important; border-left:1px solid var(--line); }
+.nav .menu-side-title { color:var(--navy); border-color:var(--line); }
+.nav a { color:var(--ink) !important; border:1px solid transparent; }
+.nav a:hover, .nav a:focus-visible { color:var(--blue) !important; background:#edf4f8; }
+.nav a[aria-current="page"] { color:var(--blue) !important; background:#e7f1f6; }
+.menu-overlay { background:rgba(9,23,39,.58); }
+.hero { background:linear-gradient(120deg,#f5f8fb 0%,#eef3f7 54%,#e3ecf1 100%) !important; }
+.hero h1, .hero .hero-copy h1 { color:var(--navy) !important; }
+.hero h1 .grad, .hero .grad { color:var(--blue) !important; -webkit-text-fill-color:var(--blue) !important; }
+.hero .lead, .hero .hero-copy p.lead { color:#506176 !important; }
+.hero .eyebrow { background:#e1ebf0 !important; color:#345e76 !important; }
+.hero-points { border-color:#dce5ec !important; }
+.hero-points svg { color:var(--blue); }
+.hero-visual { background:radial-gradient(circle at 50% 40%,#d8e3ea,#aebfcc 65%,#829aab) !important; box-shadow:0 24px 55px rgba(20,40,63,.12); }
+.hero-visual-label { text-shadow:0 2px 8px rgba(12,28,43,.75); }
+.section, .jobs-wrap, .plus-page { color:var(--ink); }
+.section-head h2, .jobs-section-heading h2 { color:var(--navy); }
+.section-subtitle, .section-head p { color:var(--muted); }
+.card, .cat, .jobs-panel, .jobs-admin-panel, .plus-panel, .product-card { border-color:var(--line) !important; box-shadow:var(--shadow); }
+.product-card { background:#fff; border:1px solid var(--line); }
+.product-card h3, .card h3, .cat h3 { color:var(--navy); }
+.product-card p, .card p { color:var(--muted); }
+.product-detail-price, .price { color:var(--navy); }
+.btn-ghost, .jobs-secondary { background:#eef3f7 !important; color:var(--navy) !important; border-color:#d5e0e8 !important; }
+.btn-ghost:hover, .jobs-secondary:hover { background:#e0ecf3 !important; color:var(--blue) !important; }
+.btn-pse { background:var(--blue) !important; color:white !important; }
+.btn-pse:hover { background:var(--navy) !important; }
+.btn-wa, .btn-wa:hover { color:#fff; }
+.btn-wa-outline { border-color:#b4dfc5; }
+.badge { background:#e3f3ed; color:#196348; }
+.badge-off, .jobs-hidden { background:#edf1f5; color:#596a7c; }
+.footer { background:var(--navy-2) !important; color:#c6d2df; }
+.footer h4, .footer strong { color:#fff; }
+.footer a:hover { color:#a7d1e0; }
+.jobs-panel, .jobs-admin-panel { background:white !important; }
+.jobs-admin { color:var(--ink) !important; }
+.jobs-admin h1, .jobs-admin h2, .jobs-admin h3 { color:var(--navy) !important; }
+.jobs-stats > *, .jobs-stat, .jobs-upload { border-color:var(--line) !important; }
+.jobs-upload { background:#f4f8fa; }
+.jobs-form input, .jobs-form select, .jobs-form textarea,
+.jobs-drawer input, .jobs-admin input, .jobs-admin select, .jobs-admin textarea {
+  background:#fff; color:var(--ink); border-color:#cbd7e1;
+}
+.jobs-form input:focus, .jobs-form select:focus, .jobs-form textarea:focus,
+.jobs-admin input:focus, .jobs-admin select:focus, .jobs-admin textarea:focus { outline:2px solid #a9cfdf; outline-offset:1px; border-color:var(--blue); }
+.jobs-table { background:white; color:var(--ink); }
+.jobs-table th { background:#eaf1f6; color:var(--navy); border-bottom:1px solid #d0dfe8; }
+.jobs-table td { border-bottom:1px solid var(--line); }
+.jobs-table tbody tr:hover { background:#f7fafc; }
+.jobs-drawer { background:#fff; color:var(--ink); }
+.jobs-item { border-color:var(--line); }
+.jobs-row-actions .jobs-edit-link,
+.jobs-row-actions .jobs-edit-button { background:#e7f1f7 !important; color:#185171 !important; border-color:#cbdde9 !important; }
+.jobs-row-actions .jobs-edit-link:hover,
+.jobs-row-actions .jobs-edit-button:hover { background:var(--blue) !important; color:white !important; }
+.jobs-row-actions .jobs-action-button:not(.jobs-delete-button),
+.jobs-row-actions .jobs-hide-button { background:#edf1f5 !important; color:#35465b !important; border-color:#d5dfe8 !important; }
+.jobs-row-actions .jobs-action-button:not(.jobs-delete-button):hover,
+.jobs-row-actions .jobs-hide-button:hover { background:#35465b !important; color:white !important; }
+/* Mantener rojo para acciones destructivas y verde para WhatsApp. */
+.jobs-delete-button, .jobs-row-actions .jobs-delete-button { background:#fff0ef !important; color:#ad302b !important; border-color:#f5c6c4 !important; }
+.jobs-delete-button:hover, .jobs-row-actions .jobs-delete-button:hover { background:#bb332e !important; color:#fff !important; border-color:#bb332e !important; }
+.jobs-msg { background:#fff5df !important; color:#78531f; }
+@media(max-width:760px){
+  .topbar { background:rgba(255,255,255,.98); }
+  .hero { background:linear-gradient(160deg,#f6f9fb,#e7eff4) !important; }
+  .hero-visual { background:radial-gradient(circle,#d7e3eb,#9fb3c1) !important; }
+  .jobs-panel { box-shadow:0 5px 20px rgba(16,40,62,.06); }
+}
