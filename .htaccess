@@ -1,0 +1,9 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule ^(admin|admin/login)/?$ index.php [L]
+RewriteRule ^(data/|views/|admin/|\.git/|\.vscode/) - [F,L]
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
+RewriteRule ^(Dockerfile|router\.php|README.*|MIGRACION.*)$ - [F,L,NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+RewriteRule ^ index.php [L]
