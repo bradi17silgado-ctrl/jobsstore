@@ -8,7 +8,7 @@ RewriteRule ^admin/(login|salir|producto/guardar|pedido/estado|resena/aprobar)/?
 RewriteRule ^admin/(index|login)\.php$ /admin/login [R=302,END]
 
 # Never expose internal application source or data.
-RewriteRule ^(data|views|admin|\.git|\.vscode)(/|$) - [F,END,NC]
+RewriteRule ^(data|views|app_admin|admin|\.git|\.vscode)(/|$) - [F,END,NC]
 RewriteRule (^|/)\.(?!well-known/) - [F,END]
 RewriteRule ^(Dockerfile|router\.php|README.*|MIGRACION.*|DESPLIEGUE.*|.*\.md)$ - [F,END,NC]
 
