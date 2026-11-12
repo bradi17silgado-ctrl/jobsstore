@@ -1,9 +1,17 @@
 Options -Indexes
+DirectoryIndex index.php
 RewriteEngine On
-RewriteRule ^(admin|admin/login)/?$ index.php [L]
-RewriteRule ^(data/|views/|admin/|\.git/|\.vscode/) - [F,L]
-RewriteRule (^|/)\.(?!well-known/) - [F,L]
-RewriteRule ^(Dockerfile|router\.php|README.*|MIGRACION.*)$ - [F,L,NC]
+
+# Public admin routes go through the application controller.
+RewriteRule ^admin/?$ index.php [END]
+RewriteRule ^admin/(login|salir|producto/guardar|pedido/estado|resena/aprobar)/?$ index.php [END]
+RewriteRule ^admin/(index|login)\.php$ /admin/login [R=302,END]
+
+# Never expose internal application source or data.
+RewriteRule ^(data|views|admin|\.git|\.vscode)(/|$) - [F,END,NC]
+RewriteRule (^|/)\.(?!well-known/) - [F,END]
+RewriteRule ^(Dockerfile|router\.php|README.*|MIGRACION.*|DESPLIEGUE.*|.*\.md)$ - [F,END,NC]
+
 RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^ - [L]
-RewriteRule ^ index.php [L]
+RewriteRule ^ - [END]
+RewriteRule ^ index.php [END]

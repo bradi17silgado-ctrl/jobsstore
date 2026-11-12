@@ -1,6 +1,4 @@
-DirectoryIndex index.php
 Options -Indexes
-
-<FilesMatch "^(index|login|dashboard|actions)\.php$">
-    Require all granted
-</FilesMatch>
+# Direct access to internal controllers is denied. Public admin URLs
+# are routed to the root front controller by the root .htaccess.
+Require all denied
