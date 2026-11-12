@@ -1,0 +1,122 @@
+[
+  {
+    "id": "g1",
+    "nombre": "Gorra Plana Azul Royal",
+    "categoria": "gorra",
+    "descripcion": "Corte plano, ajuste firme y bordado frontal.",
+    "precio": 55000,
+    "imagen": "productos/gorra-azul-royal.webp",
+    "stock": 10,
+    "destacado": true
+  },
+  {
+    "id": "g2",
+    "nombre": "Gorra Clásica Negra",
+    "categoria": "gorra",
+    "descripcion": "Diseño curvo y ligero para uso diario.",
+    "precio": 45000,
+    "imagen": "productos/gorra-negra-clasica.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "g3",
+    "nombre": "Gorra Plana Azul Marino",
+    "categoria": "gorra",
+    "descripcion": "Estilo urbano que combina con todo.",
+    "precio": 40000,
+    "imagen": "productos/gorra-azul-marino.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "g4",
+    "nombre": "Gorra Plana Verde y Dorado",
+    "categoria": "gorra",
+    "descripcion": "Contraste de colores para destacar.",
+    "precio": 55000,
+    "imagen": "productos/gorra-verde-dorado.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "g5",
+    "nombre": "Gorra Plana Negra y Roja",
+    "categoria": "gorra",
+    "descripcion": "Look deportivo con detalle bordado.",
+    "precio": 55000,
+    "imagen": "productos/gorra-negra-roja.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "g6",
+    "nombre": "Gorra Crema y Verde",
+    "categoria": "gorra",
+    "descripcion": "Tono claro con visera contrastante.",
+    "precio": 55000,
+    "imagen": "productos/gorra-crema-verde.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "r1",
+    "nombre": "Reloj Elegante Dorado",
+    "categoria": "reloj",
+    "descripcion": "Diseño clásico para ocasiones especiales.",
+    "precio": 120000,
+    "imagen": "productos/reloj-dorado.webp",
+    "stock": 10,
+    "destacado": true
+  },
+  {
+    "id": "r2",
+    "nombre": "Reloj Minimalista Azul Hielo",
+    "categoria": "reloj",
+    "descripcion": "Esfera limpia, moderno y versátil.",
+    "precio": 95000,
+    "imagen": "productos/reloj-azul-hielo.webp",
+    "stock": 10,
+    "destacado": true
+  },
+  {
+    "id": "r3",
+    "nombre": "Reloj Deportivo Acero",
+    "categoria": "reloj",
+    "descripcion": "Robusto y con estilo para todos los días.",
+    "precio": 110000,
+    "imagen": "productos/reloj-deportivo-acero.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "r4",
+    "nombre": "Reloj Esqueleto Oro Rosa",
+    "categoria": "reloj",
+    "descripcion": "Esfera esqueleto con correa de silicona.",
+    "precio": 110000,
+    "imagen": "productos/reloj-esqueleto-oro-rosa.webp",
+    "stock": 10,
+    "destacado": true
+  },
+  {
+    "id": "r5",
+    "nombre": "Reloj Esqueleto Naranja",
+    "categoria": "reloj",
+    "descripcion": "Caja negra y correa naranja llamativa.",
+    "precio": 110000,
+    "imagen": "productos/reloj-esqueleto-naranja.webp",
+    "stock": 10,
+    "destacado": false
+  },
+  {
+    "id": "r6",
+    "nombre": "Reloj Cronógrafo Titanio",
+    "categoria": "reloj",
+    "descripcion": "Acabado gris titanio de aire premium.",
+    "precio": 110000,
+    "imagen": "productos/reloj-cronografo-titanio.webp",
+    "stock": 10,
+    "destacado": false
+  }
+]
