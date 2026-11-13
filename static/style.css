@@ -1768,3 +1768,14 @@ body{background:#fff;color:var(--ink)}
 .jobs-variant-photo img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #d3dbe6}
 .jobs-variant-photo small{color:#69778b;max-width:240px}
 @media(max-width:600px){.jobs-swatch-list{gap:10px}.jobs-swatch{width:32px;height:32px}.jobs-swatch-option{min-width:42px}}
+
+/* Navegación separada del panel de administración */
+.jobs-admin-nav{display:flex;gap:9px;flex-wrap:wrap;padding:12px;margin:18px 0 22px;background:#f0f4f9;border:1px solid #dce4ee;border-radius:16px}
+.jobs-admin-nav a{display:inline-flex;align-items:center;gap:7px;padding:10px 13px;border-radius:10px;text-decoration:none;color:#253b55;font-size:13px;font-weight:700;background:#fff;border:1px solid #e0e7f1;transition:background .2s,color .2s}
+.jobs-admin-nav a:hover,.jobs-admin-nav a.active{background:#1f416a;color:#fff;border-color:#1f416a}
+.jobs-admin-quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:16px 0 24px}
+.jobs-admin-quicklinks a{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:#1f3652;border:1px solid #dde6f1;background:#fff;border-radius:15px;padding:20px;box-shadow:0 3px 14px #142c4910;transition:transform .2s,box-shadow .2s}
+.jobs-admin-quicklinks a:hover{transform:translateY(-2px);box-shadow:0 9px 24px #142c4920}
+.jobs-admin-quicklinks strong{font-size:16px}.jobs-admin-quicklinks span{font-size:13px;color:#63748b}
+@media(max-width:650px){.jobs-admin-nav{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity}.jobs-admin-nav a{flex:0 0 auto;scroll-snap-align:start}.jobs-admin-quicklinks{grid-template-columns:1fr 1fr}.jobs-admin-quicklinks a{padding:13px}.jobs-admin-quicklinks strong{font-size:14px}}
+@media(max-width:380px){.jobs-admin-quicklinks{grid-template-columns:1fr}}

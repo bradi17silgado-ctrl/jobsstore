@@ -2,6 +2,14 @@
 if(!defined('JOBS_APP')){http_response_code(403);exit;}
 require_admin();
 $d=db();$error=null;$datos=null;
+$reportSection = [
+ '/admin/informes'=>'general', '/admin/ventas'=>'ventas',
+ '/admin/mercancia/entrada'=>'entrada', '/admin/mercancia/salida'=>'salida',
+ '/admin/movimientos'=>'movimientos'
+][$path] ?? 'general';
+$reportTitle=['general'=>'Informes generales','ventas'=>'Informe de ventas','entrada'=>'Ingreso de mercancía','salida'=>'Salida de mercancía','movimientos'=>'Historial de movimientos'][$reportSection];
+// La sección de navegación determina el tipo; GET no puede mezclar el contenido de otras páginas.
+if($reportSection!=='general') $_GET['tipo'] = ['ventas'=>'ventas','entrada'=>'entradas','salida'=>'salidas','movimientos'=>'general'][$reportSection];
 try{
     if(!$d)throw new RuntimeException('No hay conexión con Railway.');
     initdb($d);
@@ -13,19 +21,22 @@ try{
 $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
 ?>
 <section class="jobs-wrap jobs-admin jobs-report-page">
- <div class="jobs-admin-header"><div><span class="jobs-eyebrow">JOBS STORE · ADMINISTRACIÓN</span><h1>Informes y mercancía</h1><p>Consulta ventas entregadas, registra entradas o salidas y descarga reportes en PDF.</p></div><a href="/admin" class="btn jobs-secondary">← Volver al panel</a></div>
+ <div class="jobs-admin-header"><div><span class="jobs-eyebrow">JOBS STORE · ADMINISTRACIÓN</span><h1><?=h($reportTitle)?></h1><p>Consulta o registra información desde esta sección independiente.</p></div><a href="/admin" class="btn jobs-secondary">← Volver al panel</a></div>
+ <?php include __DIR__.'/menu.php'; ?>
  <?php if($error):?><p class="jobs-msg"><?=h($error)?></p><?php endif; ?>
+ <?php if(in_array($reportSection,['general','ventas','movimientos'],true)): ?>
  <div class="jobs-panel jobs-admin-panel">
   <div class="jobs-section-heading"><div><h2>Generar informe</h2><p>Selecciona las fechas y el tipo de reporte.</p></div></div>
-  <form method="get" action="/admin/informes" class="jobs-report-filter">
-    <label>Informe<select name="tipo"><option value="general" <?=$tipo==='general'?'selected':''?>>Informe general</option><option value="ventas" <?=$tipo==='ventas'?'selected':''?>>Ventas</option><option value="entradas" <?=$tipo==='entradas'?'selected':''?>>Ingreso de mercancía</option><option value="salidas" <?=$tipo==='salidas'?'selected':''?>>Salida de mercancía</option></select></label>
+  <form method="get" action="<?=h($path)?>" class="jobs-report-filter">
+    <?php if($reportSection==='general'): ?><label>Informe<select name="tipo"><option value="general" <?=$tipo==='general'?'selected':''?>>Informe general</option><option value="ventas" <?=$tipo==='ventas'?'selected':''?>>Ventas</option><option value="entradas" <?=$tipo==='entradas'?'selected':''?>>Ingreso de mercancía</option><option value="salidas" <?=$tipo==='salidas'?'selected':''?>>Salida de mercancía</option></select></label><?php endif; ?>
     <label>Desde<input type="date" name="desde" value="<?=h($desde)?>" required></label>
     <label>Hasta<input type="date" name="hasta" value="<?=h($hasta)?>" required></label>
     <button class="btn jobs-secondary" type="submit">Consultar</button>
     <?php if($datos):?><a class="btn btn-primary" href="/admin/informes/pdf?<?=h($pdfQuery)?>">⬇ Descargar PDF</a><?php endif; ?>
   </form>
  </div>
- <?php if($datos): ?>
+ <?php endif; ?>
+ <?php if($datos && in_array($reportSection,['general','ventas','movimientos'],true)): ?>
  <div class="jobs-stats jobs-report-stats">
   <div class="jobs-stat"><span>Ingresos · pedidos entregados</span><strong><?=money($datos['resumen']['total_ventas'])?></strong></div>
   <div class="jobs-stat"><span>Pedidos entregados</span><strong><?=$datos['resumen']['cantidad_ventas']?></strong></div>
@@ -33,7 +44,7 @@ $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
   <div class="jobs-stat"><span>Entradas / salidas</span><strong><?=$datos['resumen']['entradas']?> / <?=$datos['resumen']['salidas']?></strong></div>
  </div>
  <div class="jobs-panel jobs-admin-panel"><div class="jobs-section-heading"><div><h2>Detalle del informe: <?=h(jobs_titulo_informe($tipo))?></h2><p>Periodo <?=h($desde)?> — <?=h($hasta)?>. Las ventas corresponden exclusivamente a pedidos entregados.</p></div></div>
- <?php if(in_array($tipo,['general','ventas'],true)): ?>
+ <?php if($reportSection!=='movimientos' && in_array($tipo,['general','ventas'],true)): ?>
  <div class="jobs-table-scroll"><table class="jobs-table"><thead><tr><th>Fecha</th><th>Referencia</th><th>Cliente</th><th>Total</th></tr></thead><tbody>
  <?php foreach($datos['ventas'] as $r): ?><tr><td><?=h($r['creado'])?></td><td><?=h($r['referencia'])?></td><td><?=h($r['cliente'])?></td><td><?=money($r['total'])?></td></tr><?php endforeach; ?>
  <?php if(!$datos['ventas']):?><tr><td colspan="4">Sin pedidos entregados en este periodo.</td></tr><?php endif; ?>
@@ -48,11 +59,19 @@ $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
  <?php endif; ?>
  </div>
  <?php endif; ?>
- <div class="jobs-panel jobs-admin-panel" id="registrar-movimiento"><div class="jobs-section-heading"><div><h2>Ingreso y salida de mercancía</h2><p>Actualiza las existencias con registro de fecha, producto, color, costo y motivo. Solo el administrador puede hacerlo.</p></div></div>
+ <?php if(in_array($reportSection,['entrada','salida'],true)): ?>
+ <div class="jobs-panel jobs-admin-panel"><div class="jobs-section-heading"><div><h2>Descargar informe de <?= $reportSection==='entrada'?'entradas':'salidas' ?></h2><p>Exporta los movimientos de mercancía del periodo seleccionado.</p></div></div>
+ <form class="jobs-report-filter" method="get" action="/admin/informes/pdf">
+ <input type="hidden" name="tipo" value="<?= $reportSection==='entrada'?'entradas':'salidas' ?>">
+ <label>Desde<input type="date" name="desde" value="<?=h($desde)?>" required></label>
+ <label>Hasta<input type="date" name="hasta" value="<?=h($hasta)?>" required></label>
+ <button class="btn btn-primary" type="submit" <?= $error?'disabled':'' ?>>⬇ Descargar PDF</button>
+ </form></div>
+ <div class="jobs-panel jobs-admin-panel" id="registrar-movimiento"><div class="jobs-section-heading"><div><h2><?=h($reportTitle)?></h2><p>Actualiza las existencias con registro de fecha, producto, color, costo y motivo. Solo el administrador puede hacerlo.</p></div></div>
  <form class="jobs-form jobs-report-form" method="post" action="/admin/inventario/movimiento">
   <input type="hidden" name="csrf" value="<?=h(csrf())?>">
   <div class="jobs-form-grid">
-   <label>Movimiento<select name="tipo" required><option value="entrada">Ingreso de mercancía (+)</option><option value="salida">Salida de mercancía (−)</option></select></label>
+   <input type="hidden" name="tipo" value="<?=h($reportSection)?>">
    <label>Producto<select name="producto_id" id="jobsMoveProduct" required><option value="">Selecciona un producto</option><?php foreach($productos as $p):?><option value="<?=h($p['id'])?>"><?=h($p['nombre'])?> · <?= (int)$p['stock'] ?> unidades</option><?php endforeach; ?></select></label>
    <label>Color<select name="color" id="jobsMoveColor" required><option value="">Selecciona primero un producto</option></select></label>
    <label>Cantidad<input name="cantidad" type="number" min="1" max="99999" step="1" required placeholder="Ej. 12"></label>
@@ -64,5 +83,6 @@ $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
  </form>
  <p class="jobs-report-note">Los pedidos descontarán inventario automáticamente. No registres nuevamente como salida una venta que ya entró como pedido.</p>
  </div>
+ <?php endif; ?>
 </section>
-<script>const jobsMoveColors=<?=json_encode($colores,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;const jobsMoveProducts=document.getElementById('jobsMoveProduct');const jobsMoveColor=document.getElementById('jobsMoveColor');function jobsUpdateMoveColors(){const list=jobsMoveColors.filter(c=>c.producto_id===jobsMoveProducts.value);jobsMoveColor.replaceChildren();if(!list.length){jobsMoveColor.add(new Option('Sin variante de color',''));jobsMoveColor.required=false;}else{jobsMoveColor.add(new Option('Selecciona un color',''));for(const c of list)jobsMoveColor.add(new Option(c.color.replaceAll('-',' ')+' · '+c.stock+' disponibles',c.color));jobsMoveColor.required=true;}}jobsMoveProducts.addEventListener('change',jobsUpdateMoveColors);jobsUpdateMoveColors();</script>
+<?php if(in_array($reportSection,['entrada','salida'],true)): ?><script>const jobsMoveColors=<?=json_encode($colores,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;const jobsMoveProducts=document.getElementById('jobsMoveProduct');const jobsMoveColor=document.getElementById('jobsMoveColor');function jobsUpdateMoveColors(){const list=jobsMoveColors.filter(c=>c.producto_id===jobsMoveProducts.value);jobsMoveColor.replaceChildren();if(!list.length){jobsMoveColor.add(new Option('Sin variante de color',''));jobsMoveColor.required=false;}else{jobsMoveColor.add(new Option('Selecciona un color',''));for(const c of list)jobsMoveColor.add(new Option(c.color.replaceAll('-',' ')+' · '+c.stock+' disponibles',c.color));jobsMoveColor.required=true;}}jobsMoveProducts.addEventListener('change',jobsUpdateMoveColors);jobsUpdateMoveColors();</script><?php endif; ?>

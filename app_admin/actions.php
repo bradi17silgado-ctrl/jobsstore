@@ -29,7 +29,7 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
     require_admin();
     verify_csrf();
     $d=db();
-    if (!$d) { message('Configura MySQL de Railway para guardar productos e imágenes.'); go('/admin'); }
+    if (!$d) { message('Configura MySQL de Railway para guardar productos e imágenes.'); go('/admin/productos'); }
     try {
         initdb($d);
         $id=trim((string)($_POST['id']??''));
@@ -143,12 +143,12 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
         }
         $d->commit();
         message($nuevo?'Producto creado correctamente.':'Producto actualizado correctamente.');
-        go('/admin');
+        go('/admin/productos');
     } catch (Throwable $e) {
         if ($d->inTransaction()) $d->rollBack();
         error_log('Guardar producto: '.$e->getMessage());
         message($e instanceof RuntimeException?$e->getMessage():'No se pudo guardar el producto. Revisa los logs de Render.');
-        go('/admin');
+        go('/admin/productos');
     }
 }
 // Ocultar o volver a publicar un producto sin borrar su información.
@@ -158,7 +158,7 @@ if ($path === '/admin/producto/visibilidad' && $method === 'POST') {
     $id=(string)($_POST['id']??'');
     $visible=(string)($_POST['visible']??'');
     if (!preg_match('/^[a-zA-Z0-9_-]{1,32}$/',$id) || !in_array($visible,['0','1'],true)) {
-        message('Solicitud de visibilidad inválida.'); go('/admin');
+        message('Solicitud de visibilidad inválida.'); go('/admin/productos');
     }
     try {
         $d=db();
@@ -171,7 +171,7 @@ if ($path === '/admin/producto/visibilidad' && $method === 'POST') {
         error_log('Visibilidad producto: '.$e->getMessage());
         message('No se pudo actualizar la visibilidad.');
     }
-    go('/admin');
+    go('/admin/productos');
 }
 // Eliminación definitiva: la imagen y las reseñas asociadas se eliminan en la misma transacción.
 // Los pedidos históricos conservan sus datos en items_json.
@@ -181,10 +181,10 @@ if ($path === '/admin/producto/eliminar' && $method === 'POST') {
     $id=(string)($_POST['id']??'');
     $confirm=(string)($_POST['confirmar']??'');
     if (!preg_match('/^[a-zA-Z0-9_-]{1,32}$/',$id) || $confirm!=='ELIMINAR') {
-        message('Eliminación no confirmada.'); go('/admin');
+        message('Eliminación no confirmada.'); go('/admin/productos');
     }
     $d=db();
-    if (!$d) { message('No hay conexión a Railway.'); go('/admin'); }
+    if (!$d) { message('No hay conexión a Railway.'); go('/admin/productos'); }
     try {
         initdb($d);
         $d->beginTransaction();
@@ -203,13 +203,13 @@ if ($path === '/admin/producto/eliminar' && $method === 'POST') {
         error_log('Eliminar producto: '.$e->getMessage());
         message('No se pudo eliminar el producto.');
     }
-    go('/admin');
+    go('/admin/productos');
 }
 if($path==='/admin/pedido/estado'&&$method==='POST'){
     require_admin();verify_csrf();
     $estado=(string)($_POST['estado']??'');$id=(int)($_POST['id']??0);
-    if(!in_array($estado,['Pendiente','Confirmado','Enviado','Entregado','Cancelado'],true)||$id<1){message('Estado inválido.');go('/admin');}
-    $d=db();if(!$d){message('Railway no está disponible.');go('/admin');}
+    if(!in_array($estado,['Pendiente','Confirmado','Enviado','Entregado','Cancelado'],true)||$id<1){message('Estado inválido.');go('/admin/pedidos');}
+    $d=db();if(!$d){message('Railway no está disponible.');go('/admin/pedidos');}
     try{
         initdb($d);$d->beginTransaction();
         $q=$d->prepare('SELECT * FROM jobs_pedidos WHERE id=? FOR UPDATE');$q->execute([$id]);$pedido=$q->fetch();
@@ -238,15 +238,15 @@ if($path==='/admin/pedido/estado'&&$method==='POST'){
         $q=$d->prepare('UPDATE jobs_pedidos SET estado=? WHERE id=?');$q->execute([$estado,$id]);
         $d->commit();message('Estado del pedido actualizado.');
     }catch(Throwable $e){if($d->inTransaction())$d->rollBack();error_log('Pedido estado: '.$e->getMessage());message($e instanceof RuntimeException?$e->getMessage():'No se pudo actualizar el pedido.');}
-    go('/admin');
+    go('/admin/pedidos');
 }
-if($path==='/admin/resena/aprobar'&&$method==='POST'){require_admin();verify_csrf();if(db()){$q=db()->prepare('UPDATE jobs_resenas SET aprobada=? WHERE id=?');$q->execute([(int)($_POST['aprobar']??0),(int)($_POST['id']??0)]);}go('/admin');}
+if($path==='/admin/resena/aprobar'&&$method==='POST'){require_admin();verify_csrf();if(db()){$q=db()->prepare('UPDATE jobs_resenas SET aprobada=? WHERE id=?');$q->execute([(int)($_POST['aprobar']??0),(int)($_POST['id']??0)]);}go('/admin/resenas');}
 
 // Entradas y salidas manuales, siempre con bloqueo de filas y auditoría.
 if ($path === '/admin/inventario/movimiento' && $method === 'POST') {
     require_admin(); verify_csrf();
     $d=db();
-    if (!$d) { message('No hay conexión a Railway.'); go('/admin/informes'); }
+    if (!$d) { message('No hay conexión a Railway.'); go('/admin/mercancia/'.((($_POST['tipo']??'')==='salida')?'salida':'entrada')); }
     try {
         initdb($d);
         $id=(string)($_POST['producto_id']??'');
@@ -287,5 +287,5 @@ if ($path === '/admin/inventario/movimiento' && $method === 'POST') {
         error_log('Movimiento de inventario: '.$e->getMessage());
         message($e instanceof RuntimeException?$e->getMessage():'No se pudo registrar el movimiento.');
     }
-    go('/admin/informes');
+    go('/admin/mercancia/'.((($_POST['tipo']??'')==='salida')?'salida':'entrada'));
 }
