@@ -34,7 +34,7 @@ if (!$registro) http_response_code(404);
     <div class="confirm-summary">
       <h2>Resumen de tu pedido</h2>
       <?php foreach (($registro['items']??[]) as $item): ?>
-      <div class="confirm-line"><span><?=h($item['nombre'])?> <small>× <?= (int)$item['cantidad'] ?></small></span><strong><?=money((float)$item['precio']*(int)$item['cantidad'])?></strong></div>
+      <div class="confirm-line"><span><?=h($item['nombre'])?><?php if(!empty($item['color'])): ?> <small>· <?=h(ucwords(str_replace('-', ' ', $item['color'])))?></small><?php endif; ?> <small>× <?= (int)$item['cantidad'] ?></small></span><strong><?=money((float)$item['precio']*(int)$item['cantidad'])?></strong></div>
       <?php endforeach; ?>
       <div class="confirm-total"><span>Total</span><strong><?=money($registro['total'])?></strong></div>
     </div>

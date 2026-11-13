@@ -23,3 +23,10 @@
     preview.hidden = false;
   });
 })();
+
+// Selector de variantes: solo se envían los colores marcados; stock total calculado.
+(()=>{const root=document.getElementById('jobsAdminColors'),total=document.getElementById('jobsLegacyStock');if(!root)return;
+const rows=[...root.querySelectorAll('[data-variant-row]')];
+function update(){let sum=0,active=0;for(const row of rows){const check=row.querySelector('[data-variant-check]'),qty=row.querySelector('[data-variant-qty]');qty.disabled=!check.checked;row.classList.toggle('is-active',check.checked);if(check.checked){sum+=Number(qty.value)||0;active++;}}if(active&&total)total.value=String(sum);}
+root.addEventListener('change',update);root.addEventListener('input',update);update();
+})();

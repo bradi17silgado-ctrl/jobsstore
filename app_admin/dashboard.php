@@ -23,7 +23,7 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
     <div class="jobs-section-heading"><div><h2>Inventario</h2><p>Controla los precios, las existencias y las fotografías.</p></div><a class="btn btn-primary" href="/admin#producto-form">+ Agregar producto</a></div>
     <div class="jobs-table-scroll"><table class="jobs-table jobs-inventory"><thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
     <?php foreach ($items as $item): ?>
-    <tr><td><div class="jobs-product-cell"><img src="<?=h($item['imagen_url'])?>" alt="" loading="lazy"><div><strong><?=h($item['nombre'])?></strong><small><?=h(ucfirst($item['categoria']))?></small></div></div></td><td><strong><?=money($item['precio'])?></strong></td><td><?= (int)$item['stock'] ?></td><td><span class="jobs-status <?=(empty($item['visible'])?'jobs-hidden':((int)$item['stock']===0?'jobs-out':'jobs-in'))?>"><?=(empty($item['visible'])?'Oculto':((int)$item['stock']===0?'Agotado':'Disponible'))?></span></td><td><div class="jobs-row-actions">
+    <tr><td><div class="jobs-product-cell"><img src="<?=h($item['imagen_url'])?>" alt="" loading="lazy"><div><strong><?=h($item['nombre'])?></strong><small><?=h(ucfirst($item['categoria']))?><?=!empty($item['colores'])?" · ".count($item['colores'])." colores":""?></small></div></div></td><td><strong><?=money($item['precio'])?></strong></td><td><?= (int)$item['stock'] ?></td><td><span class="jobs-status <?=(empty($item['visible'])?'jobs-hidden':((int)$item['stock']===0?'jobs-out':'jobs-in'))?>"><?=(empty($item['visible'])?'Oculto':((int)$item['stock']===0?'Agotado':'Disponible'))?></span></td><td><div class="jobs-row-actions">
       <a class="jobs-edit-link jobs-action-button jobs-edit-button" href="/admin?editar=<?=rawurlencode($item['id'])?>#producto-form">✎ Editar</a>
       <form method="post" action="/admin/producto/visibilidad">
         <input type="hidden" name="csrf" value="<?=h(csrf())?>">
@@ -49,8 +49,21 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
         <label>Nombre del producto<input name="nombre" required maxlength="160" placeholder="Ej. Gorra Premium Negra" value="<?=h($edit['nombre']??'')?>"></label>
         <label>Categoría<select name="categoria"><option value="gorra" <?=($edit['categoria']??'')==='gorra'?'selected':''?>>Gorras</option><option value="reloj" <?=($edit['categoria']??'')==='reloj'?'selected':''?>>Relojes</option></select></label>
         <label>Precio (COP)<input type="number" min="0" step="1" name="precio" required placeholder="55000" value="<?=h($edit['precio']??'')?>"></label>
-        <label>Unidades disponibles<input type="number" min="0" step="1" name="stock" required placeholder="10" value="<?=h($edit['stock']??'')?>"></label>
+        <label>Inventario total <input type="number" min="0" name="stock" id="jobsLegacyStock" value="<?=h($edit['stock']??'0')?>" readonly><small>Se calcula sumando las cantidades por color. En artículos antiguos, selecciona colores para activar las variantes.</small></label>
       </div>
+      <?php
+        $palette=['negro'=>'#171717','blanco'=>'#ffffff','gris'=>'#969ba3','azul-marino'=>'#172a4b','azul-rey'=>'#2458d3','rojo'=>'#c62828','verde-militar'=>'#606c38','beige'=>'#d5be9a','cafe'=>'#754c35','rosado'=>'#eba5b9','dorado'=>'#d2ae45','plateado'=>'#c1c5cc','morado'=>'#8557ad','vinotinto'=>'#76283e'];
+        $chosen=[];foreach(($edit['colores']??[]) as $variant)$chosen[$variant['color']]=$variant['stock'];
+      ?>
+      <fieldset class="jobs-variant-fieldset"><legend>Colores y existencias por color</legend><p class="jobs-color-hint">Activa los colores que vendes y escribe cuántas unidades tienes de cada uno. Un color con 0 unidades aparecerá agotado.</p>
+      <div class="jobs-admin-colors" id="jobsAdminColors">
+      <?php foreach($palette as $color=>$hex):$active=array_key_exists($color,$chosen); ?>
+        <div class="jobs-admin-color" data-variant-row="<?=h($color)?>">
+          <label class="jobs-admin-color-toggle"><input type="checkbox" data-variant-check="<?=h($color)?>" <?=$active?'checked':''?>><span class="jobs-color-dot" style="--swatch:<?=h($hex)?>"></span><span><?=h(ucwords(str_replace('-',' ',$color)))?></span></label>
+          <label class="jobs-variant-qty">Unidades<input type="number" data-variant-qty="<?=h($color)?>" name="colores[<?=h($color)?>]" min="0" max="99999" step="1" value="<?=h($chosen[$color]??'0')?>" <?=!$active?'disabled':''?>></label>
+        </div>
+      <?php endforeach; ?>
+      </div></fieldset>
       <label>Descripción del producto<textarea name="descripcion" rows="4" placeholder="Describe el material, color y características..."><?=h($edit['descripcion']??'')?></textarea></label>
       <div class="jobs-upload" id="jobsUploadArea">
         <div class="jobs-upload-icon">▧</div>
@@ -96,7 +109,7 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
             if(!is_array($p)) continue;
             $cantidad=(int)($p['cantidad']??0);$precio=(float)($p['precio']??0);
           ?>
-          <div class="jobs-detail-product"><span><?=h($p['nombre']??'Producto')?> <small>× <?= $cantidad ?></small></span><strong><?=money($precio*$cantidad)?></strong></div>
+          <div class="jobs-detail-product"><span><?=h($p['nombre']??'Producto')?><?php if(!empty($p['color'])): ?> <small>· <?=h(ucwords(str_replace("-"," ",$p['color'])))?></small><?php endif; ?> <small>× <?= $cantidad ?></small></span><strong><?=money($precio*$cantidad)?></strong></div>
           <?php endforeach; ?>
           <?php if(!$productos): ?><p>No se pudo obtener el listado de productos.</p><?php endif; ?>
         </div>

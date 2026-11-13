@@ -25,7 +25,20 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
         $categoria=(string)($_POST['categoria']??'gorra');
         $descripcion=trim((string)($_POST['descripcion']??''));
         $precio=filter_var($_POST['precio']??null,FILTER_VALIDATE_FLOAT);
-        $stock=filter_var($_POST['stock']??null,FILTER_VALIDATE_INT);
+        $colorStocks=$_POST['colores']??[];
+        if(!is_array($colorStocks))throw new RuntimeException('Colores inválidos.');
+        $palette=['negro','blanco','gris','azul-marino','azul-rey','rojo','verde-militar','beige','cafe','rosado','dorado','plateado','morado','vinotinto'];
+        $variants=[];
+        foreach($colorStocks as $color=>$units){
+            if(!is_string($color)||!in_array($color,$palette,true)||!is_scalar($units)||!preg_match('/^\d{1,6}$/D',(string)$units))throw new RuntimeException('Cantidad no válida para un color.');
+            $n=(int)$units;
+            if($n>99999)throw new RuntimeException('Cantidad máxima por color: 99999.');
+            $variants[$color]=$n;
+        }
+        // Los artículos antiguos sin variantes conservan su inventario hasta que sean editados.
+        $stock=$variants ? array_sum($variants) : filter_var($_POST['stock']??null,FILTER_VALIDATE_INT);
+        if($stock>999999)throw new RuntimeException('Stock total demasiado alto.');
+        if($nuevo && !$variants)throw new RuntimeException('Selecciona al menos un color y su cantidad.');
         if ($nombre==='' || mb_strlen($nombre)>160 || !in_array($categoria,['gorra','reloj'],true) || $precio===false || $precio<0 || $stock===false || $stock<0) {
             throw new RuntimeException('Revisa nombre, categoría, precio y stock.');
         }
@@ -54,6 +67,11 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
             $imagen='db:'.$id;
         }
         if ($imagen===null || $imagen==='') throw new RuntimeException('Selecciona una fotografía para el nuevo producto.');
+        if (!$nuevo && !$variants) {
+            $existingVariants=$d->prepare('SELECT COUNT(*) FROM jobs_colores WHERE producto_id=?');
+            $existingVariants->execute([$id]);
+            if ((int)$existingVariants->fetchColumn()>0) throw new RuntimeException('Conserva al menos un color para este producto. Puedes dejar su cantidad en 0.');
+        }
         $params=[$nombre,$categoria,$descripcion,$precio,$imagen,$stock,(int)isset($_POST['destacado']),(int)isset($_POST['visible'])];
         $d->beginTransaction();
         if ($nuevo) {
@@ -62,6 +80,12 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
         } else {
             $q=$d->prepare('UPDATE jobs_productos SET nombre=?,categoria=?,descripcion=?,precio=?,imagen=?,stock=?,destacado=?,visible=? WHERE id=?');
             $q->execute(array_merge($params,[$id]));
+        }
+        $oldColorCount=$d->prepare('SELECT COUNT(*) FROM jobs_colores WHERE producto_id=?');$oldColorCount->execute([$id]);
+        if($variants || (int)$oldColorCount->fetchColumn()>0){
+            $del=$d->prepare('DELETE FROM jobs_colores WHERE producto_id=?');$del->execute([$id]);
+            $insert=$d->prepare('INSERT INTO jobs_colores(producto_id,color,stock) VALUES(?,?,?)');
+            foreach($variants as $color=>$units)$insert->execute([$id,$color,$units]);
         }
         if ($bytes!==null) {
             $q=$d->prepare('INSERT INTO jobs_imagenes(producto_id,mime,contenido) VALUES (?,?,?) ON DUPLICATE KEY UPDATE mime=VALUES(mime), contenido=VALUES(contenido)');
@@ -119,6 +143,7 @@ if ($path === '/admin/producto/eliminar' && $method === 'POST') {
         if (!$q->fetchColumn()) throw new RuntimeException('El producto ya no existe.');
         $q=$d->prepare('DELETE FROM jobs_imagenes WHERE producto_id=?'); $q->execute([$id]);
         $q=$d->prepare('DELETE FROM jobs_resenas WHERE producto_id=?'); $q->execute([$id]);
+        $q=$d->prepare('DELETE FROM jobs_colores WHERE producto_id=?'); $q->execute([$id]);
         $q=$d->prepare('DELETE FROM jobs_productos WHERE id=?'); $q->execute([$id]);
         $d->commit();
         message('Producto eliminado definitivamente.');
