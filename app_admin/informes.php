@@ -24,10 +24,19 @@ try{
 
 }catch(Throwable $e){$error=$e->getMessage();$tipo='general';$desde=date('Y-m-01');$hasta=date('Y-m-d');$productos=[];$colores=[];}
 $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
+$comprobanteId=(string)($_GET['comprobante']??'');
+$comprobanteClase=(string)($_GET['clase']??'');
+$comprobanteDisponible=preg_match('/^[1-9][0-9]{0,18}$/D',$comprobanteId) && in_array($comprobanteClase,['ingreso','anulacion'],true);
+
 ?>
 <section class="jobs-wrap jobs-admin jobs-report-page">
  <div class="jobs-admin-header"><div><span class="jobs-eyebrow">JOBS STORE · ADMINISTRACIÓN</span><h1><?=h($reportTitle)?></h1><p>Consulta o registra información desde esta sección independiente.</p></div><a href="/admin" class="btn jobs-secondary">← Volver al panel</a></div>
 
+ <?php if($reportSection==='entrada' && $comprobanteDisponible): ?>
+ <div class="jobs-panel jobs-admin-panel"><strong>Comprobante disponible.</strong>
+ <a class="btn btn-primary" href="/admin/mercancia/comprobante/pdf?id=<?=h($comprobanteId)?>&amp;clase=<?=h($comprobanteClase)?>">⬇ Descargar comprobante PDF #<?=h($comprobanteId)?></a>
+ </div>
+ <?php endif; ?>
  <?php if($error):?><p class="jobs-msg"><?=h($error)?></p><?php endif; ?>
  <?php if(in_array($reportSection,['general','ventas','movimientos'],true)): ?>
  <div class="jobs-panel jobs-admin-panel">
@@ -92,9 +101,12 @@ $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
 <?php if($reportSection==='entrada'): ?>
  <div class="jobs-panel jobs-admin-panel">
   <div class="jobs-section-heading"><div><h2>Eliminar / anular ingresos registrados</h2><p>Selecciona un ingreso registrado por error. Se conserva el historial y se resta del inventario su cantidad si queda stock suficiente.</p></div></div>
-  <div class="jobs-table-scroll"><table class="jobs-table"><thead><tr><th>Ingreso</th><th>Fecha</th><th>Producto / color</th><th>Cantidad</th><th>Proveedor</th><th>Estado / acción</th></tr></thead><tbody>
+  <div class="jobs-table-scroll"><table class="jobs-table"><thead><tr><th>Ingreso</th><th>Fecha</th><th>Producto / color</th><th>Cantidad</th><th>Proveedor</th><th>Comprobantes PDF</th><th>Estado / acción</th></tr></thead><tbody>
   <?php foreach(($entradasAnulables??[]) as $r): ?>
    <tr><td>#<?=(int)$r['id']?></td><td><?=h($r['creado'])?></td><td><?=h($r['producto_nombre'])?><?=!empty($r['color'])?' · '.h($r['color']):''?></td><td><?=(int)$r['cantidad']?></td><td><?=h($r['proveedor']??'—')?></td><td>
+    <a class="btn jobs-secondary" href="/admin/mercancia/comprobante/pdf?id=<?=(int)$r['id']?>&amp;clase=ingreso">⬇ PDF ingreso</a>
+    <?php if($r['anulado']): ?><a class="btn jobs-secondary" href="/admin/mercancia/comprobante/pdf?id=<?=(int)$r['id']?>&amp;clase=anulacion">⬇ PDF anulación</a><?php endif; ?>
+   </td><td>
     <?php if($r['anulado']): ?><span>Ingreso anulado</span>
     <?php else: ?>
      <form method="post" action="/admin/inventario/anular-entrada" onsubmit="return confirm('¿Confirmas anular este ingreso? Se restarán sus unidades del inventario y se guardará el motivo.');">
@@ -105,7 +117,7 @@ $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
     <?php endif; ?>
    </td></tr>
   <?php endforeach; ?>
-  <?php if(empty($entradasAnulables)): ?><tr><td colspan="6">Todavía no hay ingresos de mercancía registrados.</td></tr><?php endif; ?>
+  <?php if(empty($entradasAnulables)): ?><tr><td colspan="7">Todavía no hay ingresos de mercancía registrados.</td></tr><?php endif; ?>
   </tbody></table></div>
  </div>
  <?php endif; ?>

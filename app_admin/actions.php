@@ -281,7 +281,9 @@ if ($path === '/admin/inventario/movimiento' && $method === 'POST') {
         if($variants){$u=$d->prepare('UPDATE jobs_colores SET stock=? WHERE producto_id=? AND color=?');$u->execute([$next,$id,$color]);}
         $u=$d->prepare('UPDATE jobs_productos SET stock=? WHERE id=?');$u->execute([$nextTotal,$id]);
         jobs_registrar_movimiento($d,$id,$producto['nombre'],$color?:null,$tipo,$cantidad,$previous,$next,$costo,$proveedor?:null,null,$motivo?:($tipo==='entrada'?'Ingreso de mercancía':'Salida de mercancía'));
+        $nuevoMovimientoId=(string)$d->lastInsertId();
         $d->commit();message('Movimiento registrado e inventario actualizado.');
+        if($tipo==='entrada')go('/admin/mercancia/entrada?comprobante='.rawurlencode($nuevoMovimientoId).'&clase=ingreso');
     } catch(Throwable $e) {
         if($d->inTransaction())$d->rollBack();
         error_log('Movimiento de inventario: '.$e->getMessage());
@@ -335,6 +337,7 @@ if ($path === '/admin/inventario/anular-entrada' && $method === 'POST') {
         $q->execute([$rawId,$motivo,'administrador']);
         jobs_registrar_movimiento($d,$pid,(string)$producto['nombre'],$color?:null,'anulacion_entrada',$cantidad,$old,$old-$cantidad,null,null,(string)$rawId,'Anulación del ingreso #'.$rawId.': '.$motivo);
         $d->commit();message('Ingreso #'.$rawId.' anulado; inventario actualizado y auditoría conservada.');
+        go('/admin/mercancia/entrada?comprobante='.rawurlencode($rawId).'&clase=anulacion');
     }catch(Throwable $e){
         if($d->inTransaction())$d->rollBack();
         error_log('Anular ingreso: '.$e->getMessage());

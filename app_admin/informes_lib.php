@@ -96,3 +96,53 @@ function jobs_descargar_informe_pdf():never {
     }
     exit;
 }
+
+/** Individual proof of stock entry or its reversal. Admin-only; never modifies inventory. */
+function jobs_descargar_comprobante_mercancia_pdf():never {
+    header('Cache-Control: no-store, private');
+    try {
+        $id=(string)($_GET['id']??'');
+        $clase=(string)($_GET['clase']??'ingreso');
+        if(!preg_match('/^[1-9][0-9]{0,18}$/D',$id) || !in_array($clase,['ingreso','anulacion'],true)) {
+            http_response_code(400); throw new RuntimeException('Comprobante no válido.');
+        }
+        $d=db();if(!$d)throw new RuntimeException('Railway no está disponible.');
+        initdb($d);
+        $q=$d->prepare("SELECT m.*, a.creado AS fecha_anulacion,a.motivo AS motivo_anulacion,a.usuario AS usuario_anulacion FROM jobs_movimientos m LEFT JOIN jobs_ingresos_anulados a ON a.movimiento_id=m.id WHERE m.id=? AND m.tipo='entrada' LIMIT 1");
+        $q->execute([$id]);$ingreso=$q->fetch();
+        if(!$ingreso){http_response_code(404);throw new RuntimeException('Ingreso no encontrado.');}
+        if($clase==='anulacion' && !$ingreso['fecha_anulacion']){
+            http_response_code(404);throw new RuntimeException('Este ingreso no ha sido anulado.');
+        }
+        $anulacion=null;
+        if($clase==='anulacion'){
+            $q=$d->prepare("SELECT id,creado,stock_anterior,stock_nuevo,cantidad,usuario FROM jobs_movimientos WHERE tipo='anulacion_entrada' AND referencia=? ORDER BY id DESC LIMIT 1");
+            $q->execute([$id]);$anulacion=$q->fetch();
+        }
+        $autoload=__DIR__.'/../vendor/autoload.php';
+        if(!is_file($autoload))throw new RuntimeException('Falta Dompdf. Despliega con Dockerfile y Composer.');
+        require_once $autoload;
+        $options=new \Dompdf\Options();
+        $options->set('isRemoteEnabled',false);
+        $options->set('isPhpEnabled',false);
+        $options->set('defaultFont','DejaVu Sans');
+        $pdf=new \Dompdf\Dompdf($options);
+        ob_start();
+        require __DIR__.'/comprobante_mercancia_pdf.php';
+        $html=ob_get_clean();
+        $pdf->loadHtml($html,'UTF-8');
+        $pdf->setPaper('letter','portrait');
+        $pdf->render();
+        header('Content-Type: application/pdf');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="jobs-store-'.($clase==='ingreso'?'ingreso':'anulacion').'-'.$id.'.pdf"');
+        echo $pdf->output();
+    } catch(Throwable $e) {
+        while(ob_get_level()>0)ob_end_clean();
+        error_log('Comprobante mercancía PDF: '.$e->getMessage());
+        if(http_response_code()===200)http_response_code(503);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo $e instanceof RuntimeException?$e->getMessage():'No se pudo generar el comprobante PDF.';
+    }
+    exit;
+}

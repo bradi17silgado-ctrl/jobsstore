@@ -70,6 +70,11 @@ if ($method === 'GET' && preg_match('~^/media/producto/([a-zA-Z0-9_-]{1,32})$~',
         echo $img['contenido']; exit;
     } catch (Throwable $e) { error_log('Image delivery: '.$e->getMessage()); http_response_code(500); exit; }
 }
+if ($path==='/admin/mercancia/comprobante/pdf' && $method==='GET') {
+    require_admin();
+    require_once __DIR__.'/app_admin/informes_lib.php';
+    jobs_descargar_comprobante_mercancia_pdf();
+}
 if ($path==='/admin/informes/pdf' && $method==='GET') {
     require_admin();
     require_once __DIR__.'/app_admin/informes_lib.php';
