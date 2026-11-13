@@ -9,7 +9,7 @@ RewriteEngine On
 
 # Public admin routes go through the application controller.
 RewriteRule ^admin/?$ index.php [END]
-RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar|inventario/movimiento|informes(?:/pdf)?|productos|producto/nuevo|pedidos|resenas|ventas|mercancia/(?:entrada|salida)|movimientos)/?$ index.php [END]
+RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar|inventario/(?:movimiento|anular-entrada)|informes(?:/pdf)?|productos|producto/nuevo|pedidos|resenas|ventas|mercancia/(?:entrada|salida)|movimientos)/?$ index.php [END]
 RewriteRule ^admin/(index|login)\.php$ /admin/login [R=302,END]
 
 # Never expose internal application source or data.

@@ -22,7 +22,7 @@ table.details{width:100%;border-collapse:collapse;table-layout:fixed}.details th
 <?php endif; ?>
 <?php if($tipo!=='ventas'): ?>
 <h2>Movimientos de inventario</h2><table class="details"><thead><tr><th>Fecha</th><th>Producto / color</th><th>Tipo</th><th>Cant.</th><th>Antes → Después</th><th>Detalle</th></tr></thead><tbody>
-<?php foreach($datos['movimientos'] as $m):?><tr><td><?=h($m['creado'])?></td><td><?=h($m['producto_nombre'])?><br><?=h($m['color']??'')?></td><td><?=h(ucfirst($m['tipo']))?></td><td><?=$m['cantidad']?></td><td><?=$m['stock_anterior']?> → <?=$m['stock_nuevo']?></td><td><?=h($m['motivo']??'')?><?php if($m['proveedor']): ?><br><?=h($m['proveedor'])?><?php endif; ?><?php if($m['costo_unitario']!==null):?><br>Costo/u <?=money($m['costo_unitario'])?><?php endif; ?></td></tr><?php endforeach; ?>
+<?php foreach($datos['movimientos'] as $m):?><tr><td><?=h($m['creado'])?></td><td><?=h($m['producto_nombre'])?><br><?=h($m['color']??'')?></td><td><?=h(!empty($m['anulado'])?'Entrada anulada':($m['tipo']==='anulacion_entrada'?'Anulación de entrada':ucfirst($m['tipo'])))?></td><td><?=$m['cantidad']?></td><td><?=$m['stock_anterior']?> → <?=$m['stock_nuevo']?></td><td><?=h($m['motivo']??'')?><?php if($m['proveedor']): ?><br><?=h($m['proveedor'])?><?php endif; ?><?php if($m['costo_unitario']!==null):?><br>Costo/u <?=money($m['costo_unitario'])?><?php endif; ?></td></tr><?php endforeach; ?>
 <?php if(!$datos['movimientos']):?><tr><td colspan="6">Sin movimientos registrados.</td></tr><?php endif; ?></tbody></table>
 <?php endif; ?>
 <?php if($tipo==='general'): ?>

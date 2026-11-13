@@ -18,6 +18,7 @@ $db->exec('CREATE TABLE IF NOT EXISTS jobs_pedidos (id BIGINT AUTO_INCREMENT PRI
 $col=$db->query("SHOW COLUMNS FROM jobs_pedidos LIKE 'direccion'")->fetch();
 if (!$col) { $db->exec("ALTER TABLE jobs_pedidos ADD COLUMN direccion VARCHAR(255) NULL AFTER ciudad"); }
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_movimientos (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, producto_id VARCHAR(32) NULL, producto_nombre VARCHAR(160) NOT NULL, color VARCHAR(32) NULL, tipo VARCHAR(20) NOT NULL, cantidad INT NOT NULL, stock_anterior INT NOT NULL, stock_nuevo INT NOT NULL, costo_unitario DECIMAL(12,2) NULL, proveedor VARCHAR(160) NULL, referencia VARCHAR(40) NULL, motivo VARCHAR(255) NULL, usuario VARCHAR(60) NOT NULL DEFAULT \'administrador\', creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX idx_mov_fecha (creado), INDEX idx_mov_producto (producto_id,creado), INDEX idx_mov_tipo (tipo,creado)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$db->exec('CREATE TABLE IF NOT EXISTS jobs_ingresos_anulados (movimiento_id BIGINT UNSIGNED NOT NULL PRIMARY KEY, motivo VARCHAR(255) NOT NULL, usuario VARCHAR(60) NOT NULL DEFAULT \'administrador\', creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX idx_anul_creado (creado)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_resenas (id BIGINT AUTO_INCREMENT PRIMARY KEY,producto_id VARCHAR(32) NOT NULL,cliente VARCHAR(100) NOT NULL,calificacion TINYINT NOT NULL,comentario TEXT NOT NULL,aprobada TINYINT NOT NULL DEFAULT 0,creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_config (clave VARCHAR(60) PRIMARY KEY, valor VARCHAR(60) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $seeded=$db->query("SELECT valor FROM jobs_config WHERE clave='productos_inicializados'")->fetchColumn();
@@ -83,7 +84,7 @@ if (in_array($path, ['/admin','/admin/productos','/admin/producto/nuevo','/admin
 }
 // Responder con 404 antes de enviar la plantilla HTML.
 $isPublicPage = in_array($path, ['/', '/inicio', '/catalogo', '/seguimiento', '/informacion', '/pedido/confirmado', '/admin', '/admin/login', '/admin/informes', '/admin/informes/pdf', '/admin/productos', '/admin/producto/nuevo', '/admin/pedidos', '/admin/resenas', '/admin/ventas', '/admin/mercancia/entrada', '/admin/mercancia/salida', '/admin/movimientos'], true);
-$isAction = $method === 'POST' && in_array($path, ['/pedido/crear','/resenas/crear','/admin/login','/admin/salir','/admin/producto/guardar','/admin/producto/eliminar','/admin/producto/visibilidad','/admin/pedido/estado','/admin/resena/aprobar','/admin/inventario/movimiento'], true);
+$isAction = $method === 'POST' && in_array($path, ['/pedido/crear','/resenas/crear','/admin/login','/admin/salir','/admin/producto/guardar','/admin/producto/eliminar','/admin/producto/visibilidad','/admin/pedido/estado','/admin/resena/aprobar','/admin/inventario/movimiento','/admin/inventario/anular-entrada'], true);
 $isProductPage = preg_match('~^/producto/([a-zA-Z0-9_-]+)$~', $path, $productMatch) && isset($byId[$productMatch[1]]);
 if (!$isPublicPage && !$isProductPage && !$isAction) {
     http_response_code(404);

@@ -43,16 +43,16 @@ function jobs_datos_informe(PDO $db,string $tipo,string $desde,string $hastaExcl
         }
     }
     usort($masVendidos,static fn($a,$b)=>$b['cantidad']<=>$a['cantidad']);
-    $q=$db->prepare('SELECT producto_id,producto_nombre,color,tipo,cantidad,stock_anterior,stock_nuevo,costo_unitario,proveedor,referencia,motivo,usuario,creado FROM jobs_movimientos WHERE creado>=? AND creado<? ORDER BY creado DESC,id DESC LIMIT 10000');
+    $q=$db->prepare('SELECT m.id,m.producto_id,m.producto_nombre,m.color,m.tipo,m.cantidad,m.stock_anterior,m.stock_nuevo,m.costo_unitario,m.proveedor,m.referencia,m.motivo,m.usuario,m.creado, a.movimiento_id IS NOT NULL AS anulado FROM jobs_movimientos m LEFT JOIN jobs_ingresos_anulados a ON a.movimiento_id=m.id WHERE m.creado>=? AND m.creado<? ORDER BY m.creado DESC,m.id DESC LIMIT 10000');
     $q->execute([$desde,$hastaExclusiva]);$movimientos=$q->fetchAll();
     foreach($movimientos as $m){
-        if($m['tipo']==='entrada'){
+        if($m['tipo']==='entrada' && !$m['anulado']){
             $resumen['entradas']+=(int)$m['cantidad'];
             $resumen['costo_entradas']+=(float)($m['costo_unitario']??0)*(int)$m['cantidad'];
         }
         if(in_array($m['tipo'],['salida','pedido'],true))$resumen['salidas']+=(int)$m['cantidad'];
     }
-    if($tipo==='entradas')$movimientos=array_values(array_filter($movimientos,static fn($m)=>$m['tipo']==='entrada'));
+    if($tipo==='entradas')$movimientos=array_values(array_filter($movimientos,static fn($m)=>$m['tipo']==='entrada' && !$m['anulado']));
     if($tipo==='salidas')$movimientos=array_values(array_filter($movimientos,static fn($m)=>in_array($m['tipo'],['salida','pedido'],true)));
     $q=$db->query('SELECT nombre,stock FROM jobs_productos ORDER BY nombre');
     $existencias=$q->fetchAll();

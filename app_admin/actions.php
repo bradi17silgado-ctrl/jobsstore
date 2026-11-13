@@ -289,3 +289,56 @@ if ($path === '/admin/inventario/movimiento' && $method === 'POST') {
     }
     go('/admin/mercancia/'.((($_POST['tipo']??'')==='salida')?'salida':'entrada'));
 }
+
+
+// Anula una entrada manual sin borrar el rastro histórico.
+if ($path === '/admin/inventario/anular-entrada' && $method === 'POST') {
+    require_admin(); verify_csrf();
+    $d=db();
+    $rawId=(string)($_POST['movimiento_id']??'');
+    $motivo=trim((string)($_POST['motivo_anulacion']??''));
+    if (!$d || !preg_match('/^[1-9][0-9]{0,18}$/D', $rawId) || mb_strlen($motivo)<5 || mb_strlen($motivo)>255) {
+        message('Indica un ingreso válido y un motivo de al menos 5 caracteres.');
+        go('/admin/mercancia/entrada');
+    }
+    try {
+        initdb($d);
+        $d->beginTransaction();
+        // El mismo ingreso no puede anularse dos veces.
+        $q=$d->prepare("SELECT m.* FROM jobs_movimientos m WHERE m.id=? AND m.tipo='entrada' FOR UPDATE");
+        $q->execute([$rawId]); $mov=$q->fetch();
+        if (!$mov) throw new RuntimeException('El ingreso no existe o no es una entrada manual.');
+        $q=$d->prepare('SELECT movimiento_id FROM jobs_ingresos_anulados WHERE movimiento_id=? FOR UPDATE');
+        $q->execute([$rawId]);
+        if ($q->fetch()) throw new RuntimeException('Este ingreso ya fue anulado.');
+        $pid=(string)$mov['producto_id']; $cantidad=(int)$mov['cantidad'];
+        $q=$d->prepare('SELECT id,nombre,stock FROM jobs_productos WHERE id=? FOR UPDATE');
+        $q->execute([$pid]);$producto=$q->fetch();
+        if (!$producto) throw new RuntimeException('El producto ya no existe. No se puede revertir el stock automáticamente.');
+        $oldTotal=(int)$producto['stock'];
+        if ($oldTotal<$cantidad) throw new RuntimeException('No hay existencias suficientes para anular el ingreso.');
+        $color=(string)($mov['color']??'');
+        $q=$d->prepare('SELECT color,stock FROM jobs_colores WHERE producto_id=? ORDER BY color FOR UPDATE');
+        $q->execute([$pid]);$variants=$q->fetchAll();
+        $old=$oldTotal;
+        if ($variants) {
+            $variant=null;
+            foreach($variants as $v) if ($v['color']===$color) {$variant=$v;break;}
+            if (!$variant) throw new RuntimeException('La variante de color del ingreso ya no existe.');
+            $old=(int)$variant['stock'];
+            if($old<$cantidad) throw new RuntimeException('No quedan suficientes unidades de ese color para anular el ingreso.');
+            $u=$d->prepare('UPDATE jobs_colores SET stock=? WHERE producto_id=? AND color=?');
+            $u->execute([$old-$cantidad,$pid,$color]);
+        } elseif($color!=='') throw new RuntimeException('El color original ya no existe; requiere revisión manual.');
+        $u=$d->prepare('UPDATE jobs_productos SET stock=? WHERE id=?');$u->execute([$oldTotal-$cantidad,$pid]);
+        $q=$d->prepare('INSERT INTO jobs_ingresos_anulados(movimiento_id,motivo,usuario) VALUES(?,?,?)');
+        $q->execute([$rawId,$motivo,'administrador']);
+        jobs_registrar_movimiento($d,$pid,(string)$producto['nombre'],$color?:null,'anulacion_entrada',$cantidad,$old,$old-$cantidad,null,null,(string)$rawId,'Anulación del ingreso #'.$rawId.': '.$motivo);
+        $d->commit();message('Ingreso #'.$rawId.' anulado; inventario actualizado y auditoría conservada.');
+    }catch(Throwable $e){
+        if($d->inTransaction())$d->rollBack();
+        error_log('Anular ingreso: '.$e->getMessage());
+        message($e instanceof RuntimeException?$e->getMessage():'No se pudo anular el ingreso.');
+    }
+    go('/admin/mercancia/entrada');
+}
