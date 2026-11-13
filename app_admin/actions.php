@@ -3,13 +3,28 @@ if (!defined('JOBS_APP')) { http_response_code(403); exit('Acceso denegado'); }
 // Controlador: operaciones administrativas (POST) con CSRF y sesión.
 if ($path === '/admin/login' && $method === 'POST') {
     verify_csrf();
+    jobs_rate_limit('admin-login', 5, 900);
     $password=(string)($_POST['password']??'');
-    $adminPassword=envv('ADMIN_PASSWORD');
-    if ($adminPassword==='') { message('Configura ADMIN_PASSWORD en Render.'); go('/admin/login'); }
-    if (hash_equals($adminPassword,$password)) { session_regenerate_id(true); $_SESSION['admin']=true; go('/admin'); }
-    message('Contraseña incorrecta.'); go('/admin/login');
+    if(strlen($password)>1024){message('Credenciales incorrectas.');go('/admin/login');}
+    $hash=envv('ADMIN_PASSWORD_HASH');
+    $legacy=envv('ADMIN_PASSWORD');
+    $valid=$hash!=='' ? password_verify($password,$hash) : ($legacy!=='' && hash_equals($legacy,$password));
+    if ($valid) {
+        jobs_rate_limit_reset('admin-login');
+        session_regenerate_id(true);
+        $_SESSION['admin']=true;
+        $_SESSION['admin_last_seen']=time();
+        $_SESSION['csrf']=bin2hex(random_bytes(24));
+        go('/admin');
+    }
+    message('Credenciales incorrectas.');go('/admin/login');
 }
-if($path==='/admin/salir'&&$method==='POST'){verify_csrf();unset($_SESSION['admin']);go('/');}
+if($path==='/admin/salir'&&$method==='POST'){
+    verify_csrf();
+    $_SESSION=[];
+    session_regenerate_id(true);
+    go('/');
+}
 if ($path === '/admin/producto/guardar' && $method === 'POST') {
     require_admin();
     verify_csrf();

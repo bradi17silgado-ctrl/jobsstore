@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 define('JOBS_APP', true);
-session_start(['cookie_httponly'=>true,'cookie_samesite'=>'Lax','use_strict_mode'=>true]);
-header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: strict-origin-when-cross-origin');
+require_once __DIR__.'/security.php';
+jobs_start_secure_session();
+jobs_security_headers();
 function envv(string $k,string $fallback=''):string { $v=getenv($k); if($v!==false)return $v; static $cfg=null; if($cfg===null){$cfg=[]; if(is_file(__DIR__.'/.env'))foreach(file(__DIR__.'/.env',FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) as $l){$l=trim($l);if($l===''||str_starts_with($l,'#')||!str_contains($l,'='))continue;[$a,$b]=explode('=',$l,2);$cfg[trim($a)]=trim($b," \"'");}}return $cfg[$k]??$fallback; }
 function h($v):string{return htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function money($v):string{return '$'.number_format((float)$v,0,',','.');}
@@ -32,7 +33,15 @@ if ($seeded===false) {
 function products(bool $all=false):array{$d=db();if($d){try{initdb($d);$q=$d->query('SELECT * FROM jobs_productos '.($all?'':'WHERE visible=1 ').'ORDER BY categoria,nombre');$rows=$q->fetchAll();$colors=$d->query('SELECT c.producto_id,c.color,c.stock,IF(i.producto_id IS NULL,0,1) AS imagen_disponible FROM jobs_colores c LEFT JOIN jobs_color_imagenes i ON i.producto_id=c.producto_id AND i.color=c.color ORDER BY c.color')->fetchAll();$colorsByProduct=[];foreach($colors as $c){$colorsByProduct[$c['producto_id']][]=['color'=>$c['color'],'stock'=>(int)$c['stock'],'imagen_url'=>!empty($c['imagen_disponible'])?'/media/color/'.rawurlencode($c['producto_id']).'/'.rawurlencode($c['color']):''];}foreach($rows as &$p){$p['precio']=(float)$p['precio'];$p['stock']=(int)$p['stock'];$p['colores']=$colorsByProduct[$p['id']]??[];$p['imagen_url']=str_starts_with((string)$p['imagen'],'db:')?'/media/producto/'.rawurlencode($p['id']):'/static/img/'.ltrim($p['imagen'],'/');}return $rows;}catch(Throwable $e){error_log($e->getMessage());}}$rows=json_decode(file_get_contents(__DIR__.'/data/productos.json'),true)?:[];foreach($rows as &$p){$p['imagen_url']='/static/img/'.$p['imagen'];$p['colores']=[];}return $all?$rows:array_values(array_filter($rows,static fn($p)=>!isset($p['visible'])||$p['visible']));}
 function csrf():string {return $_SESSION['csrf']??=bin2hex(random_bytes(24));}
 function verify_csrf():void{if(!hash_equals(csrf(),(string)($_SERVER['HTTP_X_CSRF_TOKEN']??$_POST['csrf']??''))){http_response_code(403);exit('Solicitud inválida (CSRF).');}}
-function admin():bool{return !empty($_SESSION['admin']);}
+function admin():bool{
+ if(empty($_SESSION['admin']))return false;
+ $now=time();
+ if(($now-(int)($_SESSION['admin_last_seen']??0))>1800){
+   unset($_SESSION['admin'],$_SESSION['admin_last_seen']);return false;
+ }
+ $_SESSION['admin_last_seen']=$now;
+ return true;
+}
 function go(string $path):never{header('Location: '.$path, true,303);exit;}
 function require_admin():void{if(!admin())go('/admin/login');}
 function message(string $s):void{$_SESSION['message']=$s;}
@@ -72,7 +81,7 @@ $isProductPage = preg_match('~^/producto/([a-zA-Z0-9_-]+)$~', $path, $productMat
 if (!$isPublicPage && !$isProductPage && !$isAction) {
     http_response_code(404);
 }
-if($path==='/pedido/crear'&&$method==='POST'){verify_csrf();header('Content-Type: application/json; charset=utf-8');$d=db();if(!$d){http_response_code(503);echo json_encode(['error'=>'La base de datos no está configurada. Puedes pedir por WhatsApp.']);exit;}$payload=json_decode(file_get_contents('php://input'),true);if(!is_array($payload))$payload=$_POST;$items=$payload['items']??[];$cliente=trim((string)($payload['nombre']??''));$telefono=trim((string)($payload['telefono']??''));$ciudad=substr(trim((string)($payload['ciudad']??'')),0,180);$direccion=substr(trim((string)($payload['direccion']??'')),0,255);if(!is_array($items)||!$items||$cliente===''||$telefono===''){http_response_code(422);echo json_encode(['error'=>'Indica nombre, teléfono y productos.']);exit;}try{initdb($d);$d->beginTransaction();$total=0;$saved=[];$q=$d->prepare('SELECT id,nombre,precio,stock FROM jobs_productos WHERE id=? AND visible=1 FOR UPDATE');
+if($path==='/pedido/crear'&&$method==='POST'){verify_csrf();jobs_rate_limit('order',12,900);header('Content-Type: application/json; charset=utf-8');$d=db();if(!$d){http_response_code(503);echo json_encode(['error'=>'La base de datos no está configurada. Puedes pedir por WhatsApp.']);exit;}$payload=json_decode(file_get_contents('php://input'),true);if(!is_array($payload))$payload=$_POST;$items=$payload['items']??[];$cliente=trim((string)($payload['nombre']??''));$telefono=trim((string)($payload['telefono']??''));$ciudad=substr(trim((string)($payload['ciudad']??'')),0,180);$direccion=substr(trim((string)($payload['direccion']??'')),0,255);if(!is_array($items)||!$items||count($items)>30||$cliente===''||$telefono===''||strlen($cliente)>480||strlen($telefono)>35){http_response_code(422);echo json_encode(['error'=>'Indica nombre, teléfono y productos.']);exit;}try{initdb($d);$d->beginTransaction();$total=0;$saved=[];$q=$d->prepare('SELECT id,nombre,precio,stock FROM jobs_productos WHERE id=? AND visible=1 FOR UPDATE');
 $colorQuery=$d->prepare('SELECT color,stock FROM jobs_colores WHERE producto_id=? AND color=? FOR UPDATE');
 $colorCount=$d->prepare('SELECT COUNT(*) FROM jobs_colores WHERE producto_id=?');
 $updateColor=$d->prepare('UPDATE jobs_colores SET stock=stock-? WHERE producto_id=? AND color=? AND stock>=?');
@@ -102,8 +111,8 @@ foreach ($_SESSION['pedidos_confirmados'] as $k=>$registro) {
 }
 // Limitar el número de comprobantes de la sesión.
 $_SESSION['pedidos_confirmados']=array_slice($_SESSION['pedidos_confirmados'],-10,null,true);
-echo json_encode(['referencia'=>$ref,'total'=>$total,'confirmacion_url'=>'/pedido/confirmado?token='.$token]);}catch(Throwable $e){if($d->inTransaction())$d->rollBack();http_response_code(422);echo json_encode(['error'=>$e->getMessage()]);}exit;}
-if($path==='/resenas/crear'&&$method==='POST'){verify_csrf();$id=(string)($_POST['id']??'');$d=db();if($d&&isset($byId[$id])){initdb($d);$q=$d->prepare('INSERT INTO jobs_resenas(producto_id,cliente,calificacion,comentario) VALUES (?,?,?,?)');$q->execute([$id,substr(trim((string)($_POST['cliente']??'')),0,100),max(1,min(5,(int)($_POST['calificacion']??5))),substr(trim((string)($_POST['comentario']??'')),0,2000)]);message('Reseña enviada para revisión.');}go('/producto/'.rawurlencode($id));}
+echo json_encode(['referencia'=>$ref,'total'=>$total,'confirmacion_url'=>'/pedido/confirmado?token='.$token]);}catch(Throwable $e){if($d->inTransaction())$d->rollBack();http_response_code(422);$msg=$e instanceof RuntimeException?$e->getMessage():'No se pudo procesar el pedido.';error_log('Pedido rechazado: '.$e->getMessage());echo json_encode(['error'=>$msg]);}exit;}
+if($path==='/resenas/crear'&&$method==='POST'){verify_csrf();jobs_rate_limit('review',8,900);$id=(string)($_POST['id']??'');$d=db();if($d&&isset($byId[$id])){initdb($d);$q=$d->prepare('INSERT INTO jobs_resenas(producto_id,cliente,calificacion,comentario) VALUES (?,?,?,?)');$q->execute([$id,substr(trim((string)($_POST['cliente']??'')),0,100),max(1,min(5,(int)($_POST['calificacion']??5))),substr(trim((string)($_POST['comentario']??'')),0,2000)]);message('Reseña enviada para revisión.');}go('/producto/'.rawurlencode($id));}
 $jobsPalette=['negro'=>'#171717','blanco'=>'#ffffff','gris'=>'#969ba3','azul-marino'=>'#172a4b','azul-rey'=>'#2458d3','rojo'=>'#c62828','verde-militar'=>'#606c38','beige'=>'#d5be9a','cafe'=>'#754c35','rosado'=>'#eba5b9','dorado'=>'#d2ae45','plateado'=>'#c1c5cc','morado'=>'#8557ad','vinotinto'=>'#76283e'];
 $wa=preg_replace('/\D/','',envv('WHATSAPP_NUMBER','573227879835'));$page='Inicio';$desc='Gorras y relojes con estilo';
 function product_card(array $p):void{ $stock=(int)$p['stock']; ?>
@@ -144,6 +153,6 @@ elseif(preg_match('~^/producto/([a-zA-Z0-9_-]+)$~',$path,$m)&&isset($byId[$m[1]]
 elseif($path==='/pedido/confirmado'){include __DIR__.'/views/pedido_confirmado.php';}
 elseif($path==='/seguimiento'){?><?php include __DIR__ . "/views/seguimiento.php"; }
 elseif($path==='/informacion'){?><?php include __DIR__ . "/views/informacion.php"; }
-elseif($path==='/admin/login'){include __DIR__.'/app_admin/login.php';}
-elseif($path==='/admin'){include __DIR__.'/app_admin/dashboard.php';}
+elseif($path==='/admin/login'){header('Cache-Control: no-store, private');include __DIR__.'/app_admin/login.php';}
+elseif($path==='/admin'){header('Cache-Control: no-store, private');include __DIR__.'/app_admin/dashboard.php';}
 else{http_response_code(404);?><section class="jobs-wrap"><h1>Página no encontrada</h1><a href="/">Volver al inicio</a></section><?php }?></main><footer class="footer"><div class="wrap footer-in"><div><a class="footer-brand" href="/">JOBS <span>STORE</span></a><p>Accesorios con carácter. Tu estilo, tus reglas.</p></div><div><h4>Explora</h4><a href="/catalogo">Colección completa</a><a href="/catalogo?c=gorra">Gorras</a><a href="/catalogo?c=reloj">Relojes</a></div><div><h4>Te ayudamos</h4><a href="/seguimiento">Rastrea tu pedido</a><a href="/informacion">Preguntas frecuentes</a><a href="https://wa.me/<?=h($wa)?>" target="_blank" rel="noopener">Atención por WhatsApp</a></div></div><div class="foot-bar"><div class="wrap">© <?=date('Y')?> JOBS Store</div></div></footer><aside class="jobs-drawer" id="cartDrawer" aria-label="Mi pedido"><div class="cart-drawer-heading"><div><span class="premium-kicker">TU SELECCIÓN</span><h2>Mi carrito</h2></div><button id="closeCart" class="btn cart-close" aria-label="Cerrar carrito">✕</button></div><p class="cart-drawer-caption">Revisa tus artículos y completa tus datos para continuar.</p><div id="cartItems"></div><h3 id="cartTotal">$0</h3><label class="cart-field">Nombre completo<input id="clientName" placeholder="¿Cómo te llamas?" autocomplete="name"></label><label class="cart-field">Teléfono<input id="clientPhone" placeholder="Número de contacto" autocomplete="tel" inputmode="tel"></label><label class="cart-field">Ciudad<input id="clientCity" placeholder="Ciudad de entrega" autocomplete="address-level2" maxlength="180"></label><label class="cart-field">Dirección de entrega<input id="clientAddress" placeholder="Calle, número y detalles" autocomplete="street-address" maxlength="255"></label><button id="saveOrder" class="btn btn-primary">Registrar pedido</button><button id="sendWa" class="btn btn-wa">Enviar por WhatsApp</button><button id="clearCart" class="btn">Vaciar carrito</button><p>Los pagos en línea no están habilitados hasta configurar y verificar una pasarela.</p></aside><script>window.JOBS={productos:<?=json_encode($all,JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>,whatsapp:<?=json_encode($wa)?>,csrf:<?=json_encode(csrf())?>};</script><script src="/static/store-php.js?v=stock-privacy-20261113"></script></body></html>

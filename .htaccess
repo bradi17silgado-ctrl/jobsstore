@@ -2,6 +2,11 @@ Options -Indexes
 DirectoryIndex index.php
 RewriteEngine On
 
+# Bloquear acceso web a configuración, código auxiliar y respaldos.
+<FilesMatch "^(?:security\.php|\.env(?:\..*)?|composer\.(?:json|lock)|.*\.(?:bak|backup|sql|log|ini|swp))$">
+    Require all denied
+</FilesMatch>
+
 # Public admin routes go through the application controller.
 RewriteRule ^admin/?$ index.php [END]
 RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar)/?$ index.php [END]
