@@ -104,8 +104,8 @@ $comprobanteDisponible=preg_match('/^[1-9][0-9]{0,18}$/D',$comprobanteId) && in_
   <div class="jobs-table-scroll"><table class="jobs-table"><thead><tr><th>Ingreso</th><th>Fecha</th><th>Producto / color</th><th>Cantidad</th><th>Proveedor</th><th>Comprobantes PDF</th><th>Estado / acción</th></tr></thead><tbody>
   <?php foreach(($entradasAnulables??[]) as $r): ?>
    <tr><td>#<?=(int)$r['id']?></td><td><?=h($r['creado'])?></td><td><?=h($r['producto_nombre'])?><?=!empty($r['color'])?' · '.h($r['color']):''?></td><td><?=(int)$r['cantidad']?></td><td><?=h($r['proveedor']??'—')?></td><td>
-    <a class="btn jobs-secondary" href="/admin/mercancia/comprobante/pdf?id=<?=(int)$r['id']?>&amp;clase=ingreso">⬇ PDF ingreso</a>
-    <?php if($r['anulado']): ?><a class="btn jobs-secondary" href="/admin/mercancia/comprobante/pdf?id=<?=(int)$r['id']?>&amp;clase=anulacion">⬇ PDF anulación</a><?php endif; ?>
+    <div class="jobs-receipt-actions"><a class="btn jobs-secondary" href="/admin/mercancia/comprobante/pdf?id=<?=(int)$r['id']?>&amp;clase=ingreso">⬇ PDF ingreso</a>
+    <?php if($r['anulado']): ?><a class="btn jobs-secondary" href="/admin/mercancia/comprobante/pdf?id=<?=(int)$r['id']?>&amp;clase=anulacion">⬇ PDF anulación</a><?php endif; ?></div>
    </td><td>
     <?php if($r['anulado']): ?><span>Ingreso anulado</span>
     <?php else: ?>
