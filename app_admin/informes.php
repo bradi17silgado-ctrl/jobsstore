@@ -43,8 +43,8 @@ $comprobanteDisponible=preg_match('/^[1-9][0-9]{0,18}$/D',$comprobanteId) && in_
   <div class="jobs-section-heading"><div><h2>Generar informe</h2><p>Selecciona las fechas y el tipo de reporte.</p></div></div>
   <form method="get" action="<?=h($path)?>" class="jobs-report-filter">
     <?php if($reportSection==='general'): ?><label>Informe<select name="tipo"><option value="general" <?=$tipo==='general'?'selected':''?>>Informe general</option><option value="ventas" <?=$tipo==='ventas'?'selected':''?>>Ventas</option><option value="entradas" <?=$tipo==='entradas'?'selected':''?>>Ingreso de mercancía</option><option value="salidas" <?=$tipo==='salidas'?'selected':''?>>Salida de mercancía</option></select></label><?php endif; ?>
-    <label>Desde<input type="date" name="desde" value="<?=h($desde)?>" required></label>
-    <label>Hasta<input type="date" name="hasta" value="<?=h($hasta)?>" required></label>
+    <label class="jobs-date-field"><span class="jobs-date-label">Fecha inicial</span><span class="jobs-date-control"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><input type="date" name="desde" value="<?=h($desde)?>" max="<?=h($hasta)?>" aria-label="Fecha inicial" required></span></label>
+    <label class="jobs-date-field"><span class="jobs-date-label">Fecha final</span><span class="jobs-date-control"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><input type="date" name="hasta" value="<?=h($hasta)?>" min="<?=h($desde)?>" aria-label="Fecha final" required></span></label>
     <button class="btn jobs-secondary" type="submit">Consultar</button>
     <?php if($datos):?><a class="btn btn-primary" href="/admin/informes/pdf?<?=h($pdfQuery)?>">⬇ Descargar PDF</a><?php endif; ?>
   </form>
@@ -77,8 +77,8 @@ $comprobanteDisponible=preg_match('/^[1-9][0-9]{0,18}$/D',$comprobanteId) && in_
  <div class="jobs-panel jobs-admin-panel"><div class="jobs-section-heading"><div><h2>Descargar informe de <?= $reportSection==='entrada'?'entradas':'salidas' ?></h2><p>Exporta los movimientos de mercancía del periodo seleccionado.</p></div></div>
  <form class="jobs-report-filter" method="get" action="/admin/informes/pdf">
  <input type="hidden" name="tipo" value="<?= $reportSection==='entrada'?'entradas':'salidas' ?>">
- <label>Desde<input type="date" name="desde" value="<?=h($desde)?>" required></label>
- <label>Hasta<input type="date" name="hasta" value="<?=h($hasta)?>" required></label>
+ <label class="jobs-date-field"><span class="jobs-date-label">Fecha inicial</span><span class="jobs-date-control"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><input type="date" name="desde" value="<?=h($desde)?>" max="<?=h($hasta)?>" aria-label="Fecha inicial" required></span></label>
+ <label class="jobs-date-field"><span class="jobs-date-label">Fecha final</span><span class="jobs-date-control"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><input type="date" name="hasta" value="<?=h($hasta)?>" min="<?=h($desde)?>" aria-label="Fecha final" required></span></label>
  <button class="btn btn-primary" type="submit" <?= $error?'disabled':'' ?>>⬇ Descargar PDF</button>
  </form></div>
  <div class="jobs-panel jobs-admin-panel" id="registrar-movimiento"><div class="jobs-section-heading"><div><h2><?=h($reportTitle)?></h2><p>Actualiza las existencias con registro de fecha, producto, color, costo y motivo. Solo el administrador puede hacerlo.</p></div></div>

@@ -116,7 +116,16 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
         <td><button class="jobs-client-link" type="button" data-order-detail="<?=h($modalId)?>" aria-label="Ver información del pedido de <?=h($r['cliente'])?>"><?=h($r['cliente'])?></button><br><span class="jobs-order-phone"><?=h($r['telefono'])?></span></td>
         <td><?=money($r['total'])?></td>
         <td><?=h($r['estado'])?></td>
-        <td><form method="post" action="/admin/pedido/estado"><input type="hidden" name="csrf" value="<?=h(csrf())?>"><input type="hidden" name="id" value="<?=h($r['id'])?>"><select name="estado"><?php foreach(['Pendiente','Confirmado','Enviado','Entregado','Cancelado'] as $estado): ?><option <?=($r['estado']===$estado?'selected':'')?>><?=h($estado)?></option><?php endforeach; ?></select><button class="btn jobs-secondary">Guardar</button></form></td>
+        <td>
+          <form method="post" action="/admin/pedido/estado" class="jobs-order-status-form">
+            <input type="hidden" name="csrf" value="<?=h(csrf())?>">
+            <input type="hidden" name="id" value="<?=h($r['id'])?>">
+            <div class="jobs-select-wrap">
+              <select name="estado" class="jobs-order-status-select" aria-label="Estado del pedido"><?php foreach(['Pendiente','Confirmado','Enviado','Entregado','Cancelado'] as $estado): ?><option <?=($r['estado']===$estado?'selected':'')?>><?=h($estado)?></option><?php endforeach; ?></select>
+            </div>
+            <button class="btn jobs-secondary jobs-order-status-save">Guardar</button>
+          </form>
+        </td>
       </tr>
       <template id="<?=h($modalId)?>">
         <div class="jobs-detail-top"><span class="jobs-detail-reference"><?=h($r['referencia'])?></span><span class="jobs-status jobs-in"><?=h($r['estado'])?></span></div>
