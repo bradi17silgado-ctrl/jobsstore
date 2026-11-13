@@ -2,19 +2,19 @@
 if (!defined('JOBS_APP')) { http_response_code(403); exit; }
 ?>
 <section class="jobs-wrap premium-detail-page"><div class="premium-breadcrumb"><a href="/">Inicio</a><span>/</span><a href="/catalogo">Catálogo</a><span>/</span><span><?=h($p['nombre'])?></span></div>
-<div class="premium-detail-layout"><div class="premium-detail-media"><img data-product-image src="<?=h($p['imagen_url'])?>" alt="<?=h($p['nombre'])?>"></div><div class="premium-detail-content"><span class="premium-kicker">JOBS STORE / <?=h(strtoupper($p['categoria']))?></span><h1><?=h($p['nombre'])?></h1><p class="premium-detail-price"><?=money($p['precio'])?></p><p class="premium-detail-stock"><?= (int)$p['stock']>0?'● Disponible · '.(int)$p['stock'].' unidades':'● Agotado' ?></p><div class="premium-detail-divider"></div><h2>Sobre este accesorio</h2><p class="premium-detail-description"><?=nl2br(h($p['descripcion']))?></p><?php if (!empty($p['colores'])): ?>
+<div class="premium-detail-layout"><div class="premium-detail-media"><img data-product-image src="<?=h($p['imagen_url'])?>" alt="<?=h($p['nombre'])?>"></div><div class="premium-detail-content"><span class="premium-kicker">JOBS STORE / <?=h(strtoupper($p['categoria']))?></span><h1><?=h($p['nombre'])?></h1><p class="premium-detail-price"><?=money($p['precio'])?></p><p class="premium-detail-stock"><?= (int)$p['stock']>0?'● Disponible':'● Agotado' ?></p><div class="premium-detail-divider"></div><h2>Sobre este accesorio</h2><p class="premium-detail-description"><?=nl2br(h($p['descripcion']))?></p><?php if (!empty($p['colores'])): ?>
   <fieldset class="jobs-swatch-fieldset" data-color-group="<?=h($p['id'])?>" data-default-image="<?=h($p['imagen_url'])?>">
     <legend>Selecciona el color: <strong data-selected-color>Elige un color</strong></legend>
     <div class="jobs-swatch-list" role="radiogroup" aria-label="Colores disponibles de <?=h($p['nombre'])?>">
     <?php foreach ($p['colores'] as $variant):
       $slug=$variant['color'];$name=ucwords(str_replace('-',' ',$slug));$qty=(int)$variant['stock'];$hex=($GLOBALS['jobsPalette'][$slug]??'#aaaaaa'); ?>
-      <label class="jobs-swatch-option" title="<?=h($name)?> · <?=$qty?> disponibles">
-        <input type="radio" name="color-<?=h($p['id'])?>" value="<?=h($slug)?>" data-color-for="<?=h($p['id'])?>" data-stock="<?=$qty?>" data-color-image="<?=h($variant['imagen_url']??'')?>" <?=$qty<1?'disabled':''?> required>
+      <label class="jobs-swatch-option" title="<?=h($name)?>">
+        <input type="radio" name="color-<?=h($p['id'])?>" value="<?=h($slug)?>" data-color-for="<?=h($p['id'])?>" data-color-image="<?=h($variant['imagen_url']??'')?>" <?=$qty<1?'disabled':''?> required>
         <span class="jobs-swatch" style="--swatch:<?=h($hex)?>"></span>
         <span class="jobs-swatch-name"><?=h($name)?></span>
       </label>
     <?php endforeach; ?>
-    </div><small class="jobs-swatch-stock" data-color-stock>Selecciona un color para ver sus existencias</small>
+    </div><small class="jobs-swatch-stock" data-color-stock>Elige el color que prefieras</small>
   </fieldset>
 <?php endif; ?>
 <button class="btn btn-primary btn-lg premium-detail-buy" data-add="<?=h($p['id'])?>" <?=$p['stock']<1?'disabled':''?>><?= $p['stock']<1?'Agotado':'Agregar al carrito ↗' ?></button><p class="premium-detail-help">¿Tienes dudas? <a href="https://wa.me/<?=h($wa)?>" target="_blank" rel="noopener">Habla con nosotros por WhatsApp</a></p></div></div>

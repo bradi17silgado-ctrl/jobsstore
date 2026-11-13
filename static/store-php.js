@@ -15,7 +15,7 @@ document.querySelectorAll('[data-color-group]').forEach(group=>{
  group.querySelectorAll('[data-color-for]').forEach(input=>input.addEventListener('change',()=>{
    if(!input.checked)return;
    const label=group.querySelector('[data-selected-color]');if(label)label.textContent=input.value.replaceAll('-',' ');
-   const stock=group.querySelector('[data-color-stock]');if(stock)stock.textContent=`${input.dataset.stock} unidades disponibles`;
+   const stock=group.querySelector('[data-color-stock]');if(stock)stock.textContent='Color seleccionado: '+input.value.replaceAll('-',' ');
    if(photo)photo.src=input.dataset.colorImage || original;
  }));
 });

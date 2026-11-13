@@ -101,7 +101,7 @@
         var q = (cart[id] || 0) + delta;
         if (q <= 0) delete cart[id];
         else if (q > MAP[id].stock) {
-            toast(MAP[id].stock > 0 ? "Solo hay " + MAP[id].stock + " unidades disponibles." : "Este producto está agotado.");
+            toast(MAP[id].stock > 0 ? "No hay suficientes existencias para esa cantidad." : "Este producto está agotado.");
             return false;
         } else cart[id] = Math.min(q, 99);
         save(); render();
