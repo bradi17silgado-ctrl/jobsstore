@@ -6,7 +6,7 @@ RewriteEngine On
 # Rutas administrativas
 RewriteRule ^admin/?$ index.php [END]
 
-RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar)/?$ index.php [END]
+RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar|inventario/movimiento|informes(?:/pdf)?)/?$ index.php [END]
 
 # Redireccionar rutas antiguas
 RewriteRule ^admin/(index|login)\.php$ /admin/login [R=302,END]

@@ -87,6 +87,12 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
             $existingVariants->execute([$id]);
             if ((int)$existingVariants->fetchColumn()>0) throw new RuntimeException('Conserva al menos un color para este producto. Puedes dejar su cantidad en 0.');
         }
+        $oldStocks=[];
+        if(!$nuevo){
+            $qOld=$d->prepare('SELECT color,stock FROM jobs_colores WHERE producto_id=?');$qOld->execute([$id]);
+            foreach($qOld->fetchAll() as $r)$oldStocks[$r['color']]=(int)$r['stock'];
+            if(!$oldStocks){$oldP=$d->prepare('SELECT stock FROM jobs_productos WHERE id=?');$oldP->execute([$id]);$oldStocks['']=(int)$oldP->fetchColumn();}
+        }
         $params=[$nombre,$categoria,$descripcion,$precio,$imagen,$stock,(int)isset($_POST['destacado']),(int)isset($_POST['visible'])];
         $d->beginTransaction();
         if ($nuevo) {
@@ -126,6 +132,14 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
         if ($bytes!==null) {
             $q=$d->prepare('INSERT INTO jobs_imagenes(producto_id,mime,contenido) VALUES (?,?,?) ON DUPLICATE KEY UPDATE mime=VALUES(mime), contenido=VALUES(contenido)');
             $q->bindValue(1,$id); $q->bindValue(2,$mime); $q->bindValue(3,$bytes,PDO::PARAM_LOB); $q->execute();
+        }
+        $changedColors=array_unique(array_merge(array_keys($oldStocks),array_keys($variants)));
+        if(!$variants)$changedColors=[''];
+        foreach($changedColors as $variantColor){
+            $before=(int)($oldStocks[$variantColor]??0);
+            $after=(int)($variants[$variantColor]??($variantColor===''?$stock:0));
+            if($before===$after)continue;
+            jobs_registrar_movimiento($d,$id,$nombre,$variantColor?:null,'ajuste',abs($after-$before),$before,$after,null,null,null,$nuevo?'Inventario inicial al crear producto':'Ajuste desde edición del producto');
         }
         $d->commit();
         message($nuevo?'Producto creado correctamente.':'Producto actualizado correctamente.');
@@ -191,5 +205,87 @@ if ($path === '/admin/producto/eliminar' && $method === 'POST') {
     }
     go('/admin');
 }
-if($path==='/admin/pedido/estado'&&$method==='POST'){require_admin();verify_csrf();$estado=(string)($_POST['estado']??'');if(in_array($estado,['Pendiente','Confirmado','Enviado','Entregado','Cancelado'],true)&&db()){$q=db()->prepare('UPDATE jobs_pedidos SET estado=? WHERE id=?');$q->execute([$estado,(int)($_POST['id']??0)]);}go('/admin');}
+if($path==='/admin/pedido/estado'&&$method==='POST'){
+    require_admin();verify_csrf();
+    $estado=(string)($_POST['estado']??'');$id=(int)($_POST['id']??0);
+    if(!in_array($estado,['Pendiente','Confirmado','Enviado','Entregado','Cancelado'],true)||$id<1){message('Estado inválido.');go('/admin');}
+    $d=db();if(!$d){message('Railway no está disponible.');go('/admin');}
+    try{
+        initdb($d);$d->beginTransaction();
+        $q=$d->prepare('SELECT * FROM jobs_pedidos WHERE id=? FOR UPDATE');$q->execute([$id]);$pedido=$q->fetch();
+        if(!$pedido)throw new RuntimeException('Pedido no encontrado.');
+        if($pedido['estado']==='Cancelado' && $estado!=='Cancelado')throw new RuntimeException('No se puede reabrir un pedido cancelado: crea un pedido nuevo para reservar inventario.');
+        if($estado==='Cancelado' && $pedido['estado']!=='Cancelado'){
+            $lineas=json_decode((string)$pedido['items_json'],true);
+            if(!is_array($lineas))throw new RuntimeException('No se pudieron leer los productos del pedido.');
+            foreach($lineas as $linea){
+                $pid=(string)($linea['id']??'');$n=(int)($linea['cantidad']??0);$color=(string)($linea['color']??'');
+                if($n<1)throw new RuntimeException('Cantidad de pedido inválida.');
+                $q=$d->prepare('SELECT nombre,stock FROM jobs_productos WHERE id=? FOR UPDATE');$q->execute([$pid]);$p=$q->fetch();
+                // Historial preservado incluso cuando un artículo fue eliminado.
+                if(!$p)continue;
+                $before=(int)$p['stock'];
+                if($color!==''){
+                    $q=$d->prepare('SELECT stock FROM jobs_colores WHERE producto_id=? AND color=? FOR UPDATE');$q->execute([$pid,$color]);$prev=$q->fetchColumn();
+                    if($prev===false)continue;
+                    $before=(int)$prev;
+                    $q=$d->prepare('UPDATE jobs_colores SET stock=stock+? WHERE producto_id=? AND color=?');$q->execute([$n,$pid,$color]);
+                }
+                $q=$d->prepare('UPDATE jobs_productos SET stock=stock+? WHERE id=?');$q->execute([$n,$pid]);
+                jobs_registrar_movimiento($d,$pid,$p['nombre'],$color?:null,'devolucion',$n,$before,$before+$n,null,null,$pedido['referencia'],'Inventario devuelto por cancelación del pedido');
+            }
+        }
+        $q=$d->prepare('UPDATE jobs_pedidos SET estado=? WHERE id=?');$q->execute([$estado,$id]);
+        $d->commit();message('Estado del pedido actualizado.');
+    }catch(Throwable $e){if($d->inTransaction())$d->rollBack();error_log('Pedido estado: '.$e->getMessage());message($e instanceof RuntimeException?$e->getMessage():'No se pudo actualizar el pedido.');}
+    go('/admin');
+}
 if($path==='/admin/resena/aprobar'&&$method==='POST'){require_admin();verify_csrf();if(db()){$q=db()->prepare('UPDATE jobs_resenas SET aprobada=? WHERE id=?');$q->execute([(int)($_POST['aprobar']??0),(int)($_POST['id']??0)]);}go('/admin');}
+
+// Entradas y salidas manuales, siempre con bloqueo de filas y auditoría.
+if ($path === '/admin/inventario/movimiento' && $method === 'POST') {
+    require_admin(); verify_csrf();
+    $d=db();
+    if (!$d) { message('No hay conexión a Railway.'); go('/admin/informes'); }
+    try {
+        initdb($d);
+        $id=(string)($_POST['producto_id']??'');
+        $color=(string)($_POST['color']??'');
+        $tipo=(string)($_POST['tipo']??'');
+        $rawQty=(string)($_POST['cantidad']??'');
+        $motivo=trim((string)($_POST['motivo']??''));
+        $proveedor=trim((string)($_POST['proveedor']??''));
+        $rawCost=trim((string)($_POST['costo_unitario']??''));
+        if (!preg_match('/^[a-zA-Z0-9_-]{1,32}$/D',$id) || !in_array($tipo,['entrada','salida'],true) || !preg_match('/^[1-9][0-9]{0,4}$/D',$rawQty)) throw new RuntimeException('Datos del movimiento inválidos.');
+        if (mb_strlen($motivo)>255 || mb_strlen($proveedor)>160 || ($tipo==='salida' && $motivo==='')) throw new RuntimeException('Especifica un motivo válido para la salida.');
+        $cantidad=(int)$rawQty;
+        $costo=null;
+        if($rawCost!==''){
+            if(!preg_match('/^\d{1,10}(?:\.\d{1,2})?$/D',$rawCost))throw new RuntimeException('Costo unitario inválido.');
+            $costo=(float)$rawCost;
+        }
+        $d->beginTransaction();
+        $q=$d->prepare('SELECT id,nombre,stock FROM jobs_productos WHERE id=? FOR UPDATE');$q->execute([$id]);$producto=$q->fetch();
+        if(!$producto) throw new RuntimeException('No existe ese producto.');
+        $v=$d->prepare('SELECT color,stock FROM jobs_colores WHERE producto_id=? ORDER BY color FOR UPDATE');$v->execute([$id]);$variants=$v->fetchAll();
+        $previous=(int)$producto['stock'];
+        if($variants){
+            $row=null;foreach($variants as $r){if($r['color']===$color){$row=$r;break;}}
+            if(!$row)throw new RuntimeException('Selecciona un color válido del producto.');
+            $previous=(int)$row['stock'];
+        } elseif ($color!=='') throw new RuntimeException('Este producto no utiliza colores.');
+        $next=$previous+($tipo==='entrada'?$cantidad:-$cantidad);
+        $nextTotal=(int)$producto['stock']+($tipo==='entrada'?$cantidad:-$cantidad);
+        if($next<0||$nextTotal<0)throw new RuntimeException('No hay existencias suficientes para esa salida.');
+        if($next>99999||$nextTotal>999999)throw new RuntimeException('La cantidad supera el inventario máximo permitido.');
+        if($variants){$u=$d->prepare('UPDATE jobs_colores SET stock=? WHERE producto_id=? AND color=?');$u->execute([$next,$id,$color]);}
+        $u=$d->prepare('UPDATE jobs_productos SET stock=? WHERE id=?');$u->execute([$nextTotal,$id]);
+        jobs_registrar_movimiento($d,$id,$producto['nombre'],$color?:null,$tipo,$cantidad,$previous,$next,$costo,$proveedor?:null,null,$motivo?:($tipo==='entrada'?'Ingreso de mercancía':'Salida de mercancía'));
+        $d->commit();message('Movimiento registrado e inventario actualizado.');
+    } catch(Throwable $e) {
+        if($d->inTransaction())$d->rollBack();
+        error_log('Movimiento de inventario: '.$e->getMessage());
+        message($e instanceof RuntimeException?$e->getMessage():'No se pudo registrar el movimiento.');
+    }
+    go('/admin/informes');
+}

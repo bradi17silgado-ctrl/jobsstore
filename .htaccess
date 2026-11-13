@@ -9,11 +9,11 @@ RewriteEngine On
 
 # Public admin routes go through the application controller.
 RewriteRule ^admin/?$ index.php [END]
-RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar)/?$ index.php [END]
+RewriteRule ^admin/(login|salir|producto/guardar|producto/eliminar|producto/visibilidad|pedido/estado|resena/aprobar|inventario/movimiento|informes(?:/pdf)?)/?$ index.php [END]
 RewriteRule ^admin/(index|login)\.php$ /admin/login [R=302,END]
 
 # Never expose internal application source or data.
-RewriteRule ^(data|views|app_admin|admin|\.git|\.vscode)(/|$) - [F,END,NC]
+RewriteRule ^(data|views|app_admin|admin|vendor|\.git|\.vscode)(/|$) - [F,END,NC]
 RewriteRule (^|/)\.(?!well-known/) - [F,END]
 RewriteRule ^(Dockerfile|router\.php|README.*|MIGRACION.*|DESPLIEGUE.*|.*\.md)$ - [F,END,NC]
 

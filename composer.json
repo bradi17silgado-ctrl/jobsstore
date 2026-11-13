@@ -1,0 +1,6 @@
+{
+  "name": "jobs/store",
+  "description": "JOBS Store - informes PDF",
+  "require": { "dompdf/dompdf": "^3.1" },
+  "config": { "sort-packages": true, "optimize-autoloader": true }
+}

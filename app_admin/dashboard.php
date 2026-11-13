@@ -14,6 +14,7 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
     <form method="post" action="/admin/salir"><input type="hidden" name="csrf" value="<?=h(csrf())?>"><button class="btn jobs-secondary" type="submit">Cerrar sesión</button></form>
   </div>
   <?php if (!$d): ?><p class="jobs-msg">La conexión a Railway no está disponible. Configura las variables DB_HOST, DB_NAME, DB_USER y DB_PASSWORD para guardar cambios.</p><?php endif; ?>
+  <div class="jobs-admin-tools"><a class="btn btn-primary" href="/admin/informes">📊 Informes de ventas y mercancía · PDF</a></div>
   <div class="jobs-stats">
     <div class="jobs-stat"><span>Productos registrados</span><strong><?=$total?></strong></div>
     <div class="jobs-stat"><span>Sin existencias</span><strong><?=$agotados?></strong></div>

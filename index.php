@@ -17,6 +17,7 @@ $db->exec('CREATE TABLE IF NOT EXISTS jobs_pedidos (id BIGINT AUTO_INCREMENT PRI
 // Migración compatible con pedidos anteriores: conservar ciudad y añadir dirección opcional.
 $col=$db->query("SHOW COLUMNS FROM jobs_pedidos LIKE 'direccion'")->fetch();
 if (!$col) { $db->exec("ALTER TABLE jobs_pedidos ADD COLUMN direccion VARCHAR(255) NULL AFTER ciudad"); }
+$db->exec('CREATE TABLE IF NOT EXISTS jobs_movimientos (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, producto_id VARCHAR(32) NULL, producto_nombre VARCHAR(160) NOT NULL, color VARCHAR(32) NULL, tipo VARCHAR(20) NOT NULL, cantidad INT NOT NULL, stock_anterior INT NOT NULL, stock_nuevo INT NOT NULL, costo_unitario DECIMAL(12,2) NULL, proveedor VARCHAR(160) NULL, referencia VARCHAR(40) NULL, motivo VARCHAR(255) NULL, usuario VARCHAR(60) NOT NULL DEFAULT \'administrador\', creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX idx_mov_fecha (creado), INDEX idx_mov_producto (producto_id,creado), INDEX idx_mov_tipo (tipo,creado)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_resenas (id BIGINT AUTO_INCREMENT PRIMARY KEY,producto_id VARCHAR(32) NOT NULL,cliente VARCHAR(100) NOT NULL,calificacion TINYINT NOT NULL,comentario TEXT NOT NULL,aprobada TINYINT NOT NULL DEFAULT 0,creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $db->exec('CREATE TABLE IF NOT EXISTS jobs_config (clave VARCHAR(60) PRIMARY KEY, valor VARCHAR(60) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 $seeded=$db->query("SELECT valor FROM jobs_config WHERE clave='productos_inicializados'")->fetchColumn();
@@ -68,15 +69,21 @@ if ($method === 'GET' && preg_match('~^/media/producto/([a-zA-Z0-9_-]{1,32})$~',
         echo $img['contenido']; exit;
     } catch (Throwable $e) { error_log('Image delivery: '.$e->getMessage()); http_response_code(500); exit; }
 }
+if ($path==='/admin/informes/pdf' && $method==='GET') {
+    require_admin();
+    require_once __DIR__.'/app_admin/informes_lib.php';
+    jobs_descargar_informe_pdf();
+}
 $all=products();$byId=[];foreach($all as $p)$byId[$p['id']]=$p;
+require_once __DIR__.'/app_admin/informes_lib.php';
 require_once __DIR__.'/app_admin/actions.php';
 // Las redirecciones deben ejecutarse antes de generar cualquier HTML.
 if ($path === '/admin' && !admin()) {
     go('/admin/login');
 }
 // Responder con 404 antes de enviar la plantilla HTML.
-$isPublicPage = in_array($path, ['/', '/inicio', '/catalogo', '/seguimiento', '/informacion', '/pedido/confirmado', '/admin', '/admin/login'], true);
-$isAction = $method === 'POST' && in_array($path, ['/pedido/crear','/resenas/crear','/admin/login','/admin/salir','/admin/producto/guardar','/admin/producto/eliminar','/admin/producto/visibilidad','/admin/pedido/estado','/admin/resena/aprobar'], true);
+$isPublicPage = in_array($path, ['/', '/inicio', '/catalogo', '/seguimiento', '/informacion', '/pedido/confirmado', '/admin', '/admin/login', '/admin/informes', '/admin/informes/pdf'], true);
+$isAction = $method === 'POST' && in_array($path, ['/pedido/crear','/resenas/crear','/admin/login','/admin/salir','/admin/producto/guardar','/admin/producto/eliminar','/admin/producto/visibilidad','/admin/pedido/estado','/admin/resena/aprobar','/admin/inventario/movimiento'], true);
 $isProductPage = preg_match('~^/producto/([a-zA-Z0-9_-]+)$~', $path, $productMatch) && isset($byId[$productMatch[1]]);
 if (!$isPublicPage && !$isProductPage && !$isAction) {
     http_response_code(404);
@@ -101,6 +108,19 @@ foreach($items as $cartKey=>$qty){
  $saved[]=['id'=>$id,'nombre'=>$p['nombre'],'color'=>$color,'cantidad'=>$n,'precio'=>(float)$p['precio']];$total+=$n*(float)$p['precio'];
 }
 $ref='JOB-'.strtoupper(bin2hex(random_bytes(5)));$stmt=$d->prepare('INSERT INTO jobs_pedidos(referencia,cliente,telefono,ciudad,direccion,total,items_json) VALUES(?,?,?,?,?,?,?)');$stmt->execute([$ref,$cliente,$telefono,$ciudad,$direccion,$total,json_encode($saved,JSON_UNESCAPED_UNICODE)]);
+foreach ($saved as $line) {
+    $oldVariant = null;
+    if (!empty($line['color'])) {
+        $c=$d->prepare('SELECT stock FROM jobs_colores WHERE producto_id=? AND color=?');
+        $c->execute([$line['id'],$line['color']]);
+        $oldVariant=(int)$c->fetchColumn()+(int)$line['cantidad'];
+    } else {
+        $c=$d->prepare('SELECT stock FROM jobs_productos WHERE id=?');
+        $c->execute([$line['id']]);
+        $oldVariant=(int)$c->fetchColumn()+(int)$line['cantidad'];
+    }
+    jobs_registrar_movimiento($d, $line['id'], $line['nombre'], $line['color'], 'pedido', (int)$line['cantidad'], $oldVariant, $oldVariant-(int)$line['cantidad'], null, null, $ref, 'Salida por pedido registrado', 'tienda');
+}
 $d->commit();
 // La confirmación se consulta mediante un token temporal de sesión, sin exponer datos privados.
 $token=bin2hex(random_bytes(24));
@@ -155,4 +175,5 @@ elseif($path==='/seguimiento'){?><?php include __DIR__ . "/views/seguimiento.php
 elseif($path==='/informacion'){?><?php include __DIR__ . "/views/informacion.php"; }
 elseif($path==='/admin/login'){header('Cache-Control: no-store, private');include __DIR__.'/app_admin/login.php';}
 elseif($path==='/admin'){header('Cache-Control: no-store, private');include __DIR__.'/app_admin/dashboard.php';}
+elseif($path==='/admin/informes'){require_admin();header('Cache-Control: no-store, private');include __DIR__.'/app_admin/informes.php';}
 else{http_response_code(404);?><section class="jobs-wrap"><h1>Página no encontrada</h1><a href="/">Volver al inicio</a></section><?php }?></main><footer class="footer"><div class="wrap footer-in"><div><a class="footer-brand" href="/">JOBS <span>STORE</span></a><p>Accesorios con carácter. Tu estilo, tus reglas.</p></div><div><h4>Explora</h4><a href="/catalogo">Colección completa</a><a href="/catalogo?c=gorra">Gorras</a><a href="/catalogo?c=reloj">Relojes</a></div><div><h4>Te ayudamos</h4><a href="/seguimiento">Rastrea tu pedido</a><a href="/informacion">Preguntas frecuentes</a><a href="https://wa.me/<?=h($wa)?>" target="_blank" rel="noopener">Atención por WhatsApp</a></div></div><div class="foot-bar"><div class="wrap">© <?=date('Y')?> JOBS Store</div></div></footer><aside class="jobs-drawer" id="cartDrawer" aria-label="Mi pedido"><div class="cart-drawer-heading"><div><span class="premium-kicker">TU SELECCIÓN</span><h2>Mi carrito</h2></div><button id="closeCart" class="btn cart-close" aria-label="Cerrar carrito">✕</button></div><p class="cart-drawer-caption">Revisa tus artículos y completa tus datos para continuar.</p><div id="cartItems"></div><h3 id="cartTotal">$0</h3><label class="cart-field">Nombre completo<input id="clientName" placeholder="¿Cómo te llamas?" autocomplete="name"></label><label class="cart-field">Teléfono<input id="clientPhone" placeholder="Número de contacto" autocomplete="tel" inputmode="tel"></label><label class="cart-field">Ciudad<input id="clientCity" placeholder="Ciudad de entrega" autocomplete="address-level2" maxlength="180"></label><label class="cart-field">Dirección de entrega<input id="clientAddress" placeholder="Calle, número y detalles" autocomplete="street-address" maxlength="255"></label><button id="saveOrder" class="btn btn-primary">Registrar pedido</button><button id="sendWa" class="btn btn-wa">Enviar por WhatsApp</button><button id="clearCart" class="btn">Vaciar carrito</button><p>Los pagos en línea no están habilitados hasta configurar y verificar una pasarela.</p></aside><script>window.JOBS={productos:<?=json_encode($all,JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>,whatsapp:<?=json_encode($wa)?>,csrf:<?=json_encode(csrf())?>};</script><script src="/static/store-php.js?v=stock-privacy-20261113"></script></body></html>

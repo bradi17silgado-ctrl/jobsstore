@@ -1,8 +1,12 @@
 
 FROM php:8.3-apache
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 # Extensiones para MySQL
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN apt-get update && apt-get install -y --no-install-recommends libpng-dev libjpeg62-turbo-dev libfreetype6-dev libzip-dev libonig-dev unzip git \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install mysqli pdo pdo_mysql gd zip mbstring \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN printf 'upload_max_filesize=4M\npost_max_size=5M\nmax_file_uploads=5\nexpose_php=Off\ndisplay_errors=Off\nlog_errors=On\nallow_url_include=Off\nsession.use_strict_mode=1\n' > /usr/local/etc/php/conf.d/jobs-uploads.ini
 
@@ -22,6 +26,7 @@ WORKDIR /var/www/html
 
 # Copiar proyecto PHP
 COPY . /var/www/html/
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 # Permisos
 RUN chown -R www-data:www-data /var/www/html \

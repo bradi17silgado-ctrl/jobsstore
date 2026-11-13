@@ -6,3 +6,5 @@
 *.zip
 *.db
 *.sqlite
+
+vendor
