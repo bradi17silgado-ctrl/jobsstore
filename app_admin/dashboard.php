@@ -18,18 +18,19 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
     <form method="post" action="/admin/salir"><input type="hidden" name="csrf" value="<?=h(csrf())?>"><button class="btn jobs-secondary" type="submit">Cerrar sesión</button></form>
   </div>
   <?php if (!$d): ?><p class="jobs-msg">La conexión a Railway no está disponible. Configura las variables DB_HOST, DB_NAME, DB_USER y DB_PASSWORD para guardar cambios.</p><?php endif; ?>
-  <?php include __DIR__.'/menu.php'; ?>
+  <?php if($adminSection!=='inicio'): ?><div class="jobs-admin-back"><a href="/admin" class="btn jobs-secondary">← Volver al panel administrativo</a></div><?php endif; ?>
   <?php if($adminSection==='inicio'): ?>
-  <div class="jobs-admin-quicklinks">
-   <a href="/admin/productos"><strong>📦 Productos</strong><span>Ver inventario y administrar catálogo</span></a>
-   <a href="/admin/producto/nuevo"><strong>＋ Agregar producto</strong><span>Crear artículos y definir colores</span></a>
-   <a href="/admin/pedidos"><strong>🛒 Pedidos</strong><span>Consultar clientes, entregas y estados</span></a>
-   <a href="/admin/ventas"><strong>📊 Informe de ventas</strong><span>Estadísticas y descarga en PDF</span></a>
-   <a href="/admin/mercancia/entrada"><strong>↧ Ingreso de mercancía</strong><span>Registrar nuevas existencias</span></a>
-   <a href="/admin/mercancia/salida"><strong>↥ Salida de mercancía</strong><span>Registrar ajustes y pérdidas</span></a>
-   <a href="/admin/movimientos"><strong>📋 Historial</strong><span>Movimientos y auditoría</span></a>
-   <a href="/admin/resenas"><strong>⭐ Reseñas</strong><span>Moderar comentarios pendientes</span></a>
-  </div>
+  <div class="jobs-admin-launch-heading"><h2>¿Qué deseas administrar?</h2><p>Selecciona un botón para abrir su apartado. Cada herramienta se muestra en una página independiente.</p></div>
+  <nav class="jobs-admin-buttons" aria-label="Funciones del panel administrativo">
+    <a class="jobs-admin-button" href="/admin/productos"><span class="jobs-admin-button-icon" aria-hidden="true">📦</span><span class="jobs-admin-button-info"><strong>Productos</strong><small>Inventario y productos registrados</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+    <a class="jobs-admin-button" href="/admin/producto/nuevo"><span class="jobs-admin-button-icon" aria-hidden="true">➕</span><span class="jobs-admin-button-info"><strong>Agregar producto</strong><small>Crear y editar productos y colores</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+    <a class="jobs-admin-button" href="/admin/pedidos"><span class="jobs-admin-button-icon" aria-hidden="true">🛒</span><span class="jobs-admin-button-info"><strong>Pedidos</strong><small>Consultar clientes y actualizar pedidos</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+    <a class="jobs-admin-button" href="/admin/ventas"><span class="jobs-admin-button-icon" aria-hidden="true">📊</span><span class="jobs-admin-button-info"><strong>Informe de ventas</strong><small>Estadísticas y descarga PDF</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+    <a class="jobs-admin-button" href="/admin/mercancia/entrada"><span class="jobs-admin-button-icon" aria-hidden="true">📥</span><span class="jobs-admin-button-info"><strong>Ingreso de mercancía</strong><small>Registrar nuevas existencias</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+    <a class="jobs-admin-button" href="/admin/mercancia/salida"><span class="jobs-admin-button-icon" aria-hidden="true">📤</span><span class="jobs-admin-button-info"><strong>Salida de mercancía</strong><small>Registrar productos retirados</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+    <a class="jobs-admin-button" href="/admin/movimientos"><span class="jobs-admin-button-icon" aria-hidden="true">📋</span><span class="jobs-admin-button-info"><strong>Historial</strong><small>Movimientos y auditoría</small></span><span class="jobs-admin-button-arrow" aria-hidden="true">→</span></a>
+  </nav>
+  <div class="jobs-admin-extras"><a href="/admin/resenas" class="btn jobs-secondary">☆ Administrar reseñas</a></div>
   <div class="jobs-stats">
     <div class="jobs-stat"><span>Productos registrados</span><strong><?=$total?></strong></div>
     <div class="jobs-stat"><span>Sin existencias</span><strong><?=$agotados?></strong></div>

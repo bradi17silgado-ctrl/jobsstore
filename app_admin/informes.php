@@ -22,7 +22,7 @@ $pdfQuery=http_build_query(['tipo'=>$tipo,'desde'=>$desde,'hasta'=>$hasta]);
 ?>
 <section class="jobs-wrap jobs-admin jobs-report-page">
  <div class="jobs-admin-header"><div><span class="jobs-eyebrow">JOBS STORE · ADMINISTRACIÓN</span><h1><?=h($reportTitle)?></h1><p>Consulta o registra información desde esta sección independiente.</p></div><a href="/admin" class="btn jobs-secondary">← Volver al panel</a></div>
- <?php include __DIR__.'/menu.php'; ?>
+
  <?php if($error):?><p class="jobs-msg"><?=h($error)?></p><?php endif; ?>
  <?php if(in_array($reportSection,['general','ventas','movimientos'],true)): ?>
  <div class="jobs-panel jobs-admin-panel">

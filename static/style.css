@@ -1779,3 +1779,22 @@ body{background:#fff;color:var(--ink)}
 .jobs-admin-quicklinks strong{font-size:16px}.jobs-admin-quicklinks span{font-size:13px;color:#63748b}
 @media(max-width:650px){.jobs-admin-nav{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity}.jobs-admin-nav a{flex:0 0 auto;scroll-snap-align:start}.jobs-admin-quicklinks{grid-template-columns:1fr 1fr}.jobs-admin-quicklinks a{padding:13px}.jobs-admin-quicklinks strong{font-size:14px}}
 @media(max-width:380px){.jobs-admin-quicklinks{grid-template-columns:1fr}}
+
+
+/* Página principal administrativa: botones separados en vez de una lista de funciones mezcladas */
+.jobs-admin-launch-heading{margin:25px 0 17px}
+.jobs-admin-launch-heading h2{margin:0 0 5px;font-size:clamp(20px,2.6vw,27px);color:#172d48}
+.jobs-admin-launch-heading p{margin:0;color:#61738b;font-size:14px}
+.jobs-admin-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:18px}
+.jobs-admin-button{min-height:142px;display:flex;gap:13px;align-items:flex-start;position:relative;padding:22px 18px;border-radius:18px;border:1px solid #dce5f1;background:#fff;color:#1b334e;text-decoration:none;box-shadow:0 7px 23px #122d4a0a;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.jobs-admin-button:hover{border-color:#8ea9cc;transform:translateY(-3px);box-shadow:0 12px 28px #122d4a1f}
+.jobs-admin-button:focus-visible{outline:3px solid #2271b1;outline-offset:3px}
+.jobs-admin-button-icon{display:grid;place-items:center;flex:0 0 50px;height:50px;font-size:24px;border-radius:13px;background:#eef4fb}
+.jobs-admin-button-info{display:flex;flex-direction:column;gap:9px;padding-top:3px;min-width:0}
+.jobs-admin-button-info strong{font-size:16px;font-weight:800;line-height:1.3;color:#193650}
+.jobs-admin-button-info small{font-size:13px;line-height:1.45;color:#63768e}
+.jobs-admin-button-arrow{position:absolute;right:17px;bottom:14px;color:#5077a6;font-size:21px}
+.jobs-admin-extras{display:flex;justify-content:flex-start;margin-bottom:20px}
+.jobs-admin-back{margin:17px 0 22px}
+@media(max-width:850px){.jobs-admin-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.jobs-admin-buttons{grid-template-columns:1fr;gap:11px}.jobs-admin-button{min-height:105px;padding:17px 16px}.jobs-admin-button-icon{flex-basis:45px;height:45px;font-size:21px}.jobs-admin-button-arrow{bottom:13px}}
