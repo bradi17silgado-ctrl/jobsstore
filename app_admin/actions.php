@@ -87,6 +87,27 @@ if ($path === '/admin/producto/guardar' && $method === 'POST') {
             $insert=$d->prepare('INSERT INTO jobs_colores(producto_id,color,stock) VALUES(?,?,?)');
             foreach($variants as $color=>$units)$insert->execute([$id,$color,$units]);
         }
+        // Las fotos son archivos reales por color; jamás se recolorea una imagen automáticamente.
+        // Si falta fotografía para un color se utiliza la principal, sin simular otro color.
+        $colorFiles=$_FILES['imagenes_color']??null;
+        if(is_array($colorFiles) && isset($colorFiles['name']) && is_array($colorFiles['name'])){
+            $upsert=$d->prepare('INSERT INTO jobs_color_imagenes (producto_id,color,mime,contenido) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE mime=VALUES(mime),contenido=VALUES(contenido)');
+            foreach($colorFiles['name'] as $color=>$filename){
+                if(!in_array($color,$palette,true))throw new RuntimeException('Color de imagen inválido.');
+                $err=$colorFiles['error'][$color]??UPLOAD_ERR_NO_FILE;
+                if($err===UPLOAD_ERR_NO_FILE)continue;
+                if($err!==UPLOAD_ERR_OK || !isset($variants[$color]))throw new RuntimeException('No se pudo subir la imagen del color '.$color);
+                $temp=$colorFiles['tmp_name'][$color]??'';
+                $size=(int)($colorFiles['size'][$color]??0);
+                if(!is_uploaded_file($temp) || $size<1 || $size>3*1024*1024)throw new RuntimeException('La imagen del color '.$color.' debe pesar máximo 3 MB.');
+                $info=@getimagesize($temp);$type=(new finfo(FILEINFO_MIME_TYPE))->file($temp);
+                if(!$info || !in_array($type,['image/jpeg','image/png','image/webp'],true) || ($info['mime']??'')!==$type || $info[0]>5000 || $info[1]>5000)throw new RuntimeException('Foto inválida en '.$color.' (JPG, PNG o WEBP).');
+                $data=file_get_contents($temp);if($data===false)throw new RuntimeException('No se pudo leer la foto de '.$color);
+                $upsert->bindValue(1,$id);$upsert->bindValue(2,$color);$upsert->bindValue(3,$type);$upsert->bindValue(4,$data,PDO::PARAM_LOB);$upsert->execute();
+            }
+        }
+        // Eliminar imágenes huérfanas de variantes retiradas.
+        if($variants){$markers=implode(',',array_fill(0,count($variants),'?'));$cleanup=$d->prepare('DELETE FROM jobs_color_imagenes WHERE producto_id=? AND color NOT IN ('.$markers.')');$cleanup->execute(array_merge([$id],array_keys($variants)));}
         if ($bytes!==null) {
             $q=$d->prepare('INSERT INTO jobs_imagenes(producto_id,mime,contenido) VALUES (?,?,?) ON DUPLICATE KEY UPDATE mime=VALUES(mime), contenido=VALUES(contenido)');
             $q->bindValue(1,$id); $q->bindValue(2,$mime); $q->bindValue(3,$bytes,PDO::PARAM_LOB); $q->execute();
@@ -143,6 +164,7 @@ if ($path === '/admin/producto/eliminar' && $method === 'POST') {
         if (!$q->fetchColumn()) throw new RuntimeException('El producto ya no existe.');
         $q=$d->prepare('DELETE FROM jobs_imagenes WHERE producto_id=?'); $q->execute([$id]);
         $q=$d->prepare('DELETE FROM jobs_resenas WHERE producto_id=?'); $q->execute([$id]);
+        $q=$d->prepare('DELETE FROM jobs_color_imagenes WHERE producto_id=?');$q->execute([$id]);
         $q=$d->prepare('DELETE FROM jobs_colores WHERE producto_id=?'); $q->execute([$id]);
         $q=$d->prepare('DELETE FROM jobs_productos WHERE id=?'); $q->execute([$id]);
         $d->commit();

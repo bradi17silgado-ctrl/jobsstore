@@ -60,6 +60,8 @@ $total=count($items); $agotados=count(array_filter($items,static fn($p)=>(int)$p
       <?php foreach($palette as $color=>$hex):$active=array_key_exists($color,$chosen); ?>
         <div class="jobs-admin-color" data-variant-row="<?=h($color)?>">
           <label class="jobs-admin-color-toggle"><input type="checkbox" data-variant-check="<?=h($color)?>" <?=$active?'checked':''?>><span class="jobs-color-dot" style="--swatch:<?=h($hex)?>"></span><span><?=h(ucwords(str_replace('-',' ',$color)))?></span></label>
+          <?php $colorImg='';if($edit)foreach(($edit['colores']??[]) as $cv){if($cv['color']===$color){$colorImg=$cv['imagen_url']??'';break;}} ?>
+          <label class="jobs-variant-photo">Foto del color <input type="file" name="imagenes_color[<?=h($color)?>]" data-variant-image accept="image/jpeg,image/png,image/webp" <?=$active?'':'disabled'?>><small><?= $colorImg ? 'Imagen guardada · cambia solo si subes otra' : 'Sin foto: se mostrará la imagen principal' ?></small><?php if($colorImg): ?><img loading="lazy" src="<?=h($colorImg)?>" alt="Foto de <?=h($color)?>" width="64" height="64"><?php endif; ?></label>
           <label class="jobs-variant-qty">Unidades<input type="number" data-variant-qty="<?=h($color)?>" name="colores[<?=h($color)?>]" min="0" max="99999" step="1" value="<?=h($chosen[$color]??'0')?>" <?=!$active?'disabled':''?>></label>
         </div>
       <?php endforeach; ?>
