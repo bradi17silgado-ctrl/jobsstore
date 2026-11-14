@@ -48,7 +48,7 @@
 
     function consultar(id) {
         var p = MAP[id]; if (!p) return;
-        openWA("¡Hola JOBS Store! 👋\nMe interesa este producto:\n\n" +
+        openWA("¡Hola JOBS Store! \nMe interesa este producto:\n\n" +
                "• " + p.nombre + " (" + cop(p.precio) + " COP)\n\n" +
                "¿Está disponible? Quisiera más información. ¡Gracias!");
     }
@@ -64,7 +64,7 @@
             var p = MAP[id], q = cart[id];
             return "• " + q + " x " + p.nombre + " — " + cop(p.precio * q);
         });
-        var msg = "¡Hola JOBS Store! 👋 Quiero hacer este pedido:\n\n" + lineas.join("\n") +
+        var msg = "¡Hola JOBS Store! Quiero hacer este pedido:\n\n" + lineas.join("\n") +
                   "\n\n*Total: " + cop(totals().t) + " COP*" +
                   (nombre ? "\n\nNombre: " + nombre : "") +
                   (ciudad ? "\nCiudad/dirección: " + ciudad : "") +

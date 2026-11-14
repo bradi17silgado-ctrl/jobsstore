@@ -1789,7 +1789,7 @@ body{background:#fff;color:var(--ink)}
 .jobs-admin-button{min-height:142px;display:flex;gap:13px;align-items:flex-start;position:relative;padding:22px 18px;border-radius:18px;border:1px solid #dce5f1;background:#fff;color:#1b334e;text-decoration:none;box-shadow:0 7px 23px #122d4a0a;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .jobs-admin-button:hover{border-color:#8ea9cc;transform:translateY(-3px);box-shadow:0 12px 28px #122d4a1f}
 .jobs-admin-button:focus-visible{outline:3px solid #2271b1;outline-offset:3px}
-.jobs-admin-button-icon{display:grid;place-items:center;flex:0 0 50px;height:50px;font-size:24px;border-radius:13px;background:#eef4fb}
+
 .jobs-admin-button-info{display:flex;flex-direction:column;gap:9px;padding-top:3px;min-width:0}
 .jobs-admin-button-info strong{font-size:16px;font-weight:800;line-height:1.3;color:#193650}
 .jobs-admin-button-info small{font-size:13px;line-height:1.45;color:#63768e}
@@ -1797,7 +1797,7 @@ body{background:#fff;color:var(--ink)}
 .jobs-admin-extras{display:flex;justify-content:flex-start;margin-bottom:20px}
 .jobs-admin-back{margin:17px 0 22px}
 @media(max-width:850px){.jobs-admin-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:580px){.jobs-admin-buttons{grid-template-columns:1fr;gap:11px}.jobs-admin-button{min-height:105px;padding:17px 16px}.jobs-admin-button-icon{flex-basis:45px;height:45px;font-size:21px}.jobs-admin-button-arrow{bottom:13px}}
+@media(max-width:580px){.jobs-admin-buttons{grid-template-columns:1fr;gap:11px}.jobs-admin-button{min-height:105px;padding:17px 16px}.jobs-admin-button-arrow{bottom:13px}}
 
 
 /* JOBS Store · Acciones administrativas compactas (noviembre 2026) */
@@ -1846,7 +1846,6 @@ body{background:#fff;color:var(--ink)}
 .jobs-admin .jobs-report-filter .jobs-date-label{display:block;line-height:1.4}
 .jobs-admin .jobs-report-filter .jobs-date-control{display:flex;position:relative;align-items:center;gap:9px;min-height:44px;width:100%;background:#f8fafc;border:1px solid #d7e1ed;border-radius:11px;padding:0 12px;transition:border-color .2s,box-shadow .2s,background .2s}
 .jobs-admin .jobs-report-filter .jobs-date-control:focus-within{background:#fff;border-color:#527cae;box-shadow:0 0 0 3px rgba(49,99,157,.13)}
-.jobs-admin .jobs-report-filter .jobs-date-control svg{width:19px;height:19px;flex:none;color:#40628a}
 .jobs-admin .jobs-report-filter .jobs-date-control input[type=date]{display:block;flex:1;min-width:0;width:100%;padding:9px 0!important;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;font:600 13px/1.35 Inter,system-ui,sans-serif!important;color:#203652!important;min-height:42px;color-scheme:light;cursor:pointer}
 .jobs-admin .jobs-report-filter .jobs-date-control input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.7;max-width:18px}
 .jobs-admin .jobs-report-filter .jobs-date-control input[type=date]:focus{outline:0!important}
